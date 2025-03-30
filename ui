@@ -142,8 +142,13 @@ function UIModule.Initialize()
     
     -- Connect events
     CloseButton.MouseButton1Click:Connect(function()
-        BlurEffect:Destroy()
-        ScreenGui:Destroy()
+        pcall(function() BlurEffect:Destroy() end)
+        pcall(function() ScreenGui:Destroy() end)
+    end)
+    
+    -- Debug event
+    ScanButton.MouseButton1Down:Connect(function()
+        print("Button pressed down!")
     end)
     
     -- Store references
