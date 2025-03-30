@@ -175,13 +175,155 @@ function UIModule.UpdateStatus(text)
     UIModule.StatusLabel.Text = text
 end
 
-function UIModule.AddResult(path, name)
+function UIModule.CreateCodeViewer(name, path, source)
+    -- Create code viewer window
+    local CodeViewerGui = Instance.new("ScreenGui")
+    local MainFrame = Instance.new("Frame")
+    local UICorner = Instance.new("UICorner")
+    local TitleBar = Instance.new("Frame")
+    local UICornerTitle = Instance.new("UICorner")
+    local Title = Instance.new("TextLabel")
+    local CloseButton = Instance.new("TextButton")
+    local CodeScrollFrame = Instance.new("ScrollingFrame")
+    local CodeText = Instance.new("TextBox")
+    local CopyButton = Instance.new("TextButton")
+    local UICornerCopy = Instance.new("UICorner")
+    
+    -- Main setup
+    CodeViewerGui.Name = "KickFinderCodeViewer"
+    CodeViewerGui.Parent = game:GetService("CoreGui")
+    CodeViewerGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    
+    MainFrame.Name = "MainFrame"
+    MainFrame.Parent = CodeViewerGui
+    MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    MainFrame.BorderSizePixel = 0
+    MainFrame.Position = UDim2.new(0.5, -300, 0.5, -250)
+    MainFrame.Size = UDim2.new(0, 600, 0, 500)
+    MainFrame.Active = true
+    MainFrame.Draggable = true
+    
+    UICorner.Parent = MainFrame
+    UICorner.CornerRadius = UDim.new(0, 10)
+    
+    TitleBar.Name = "TitleBar"
+    TitleBar.Parent = MainFrame
+    TitleBar.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
+    TitleBar.BorderSizePixel = 0
+    TitleBar.Size = UDim2.new(1, 0, 0, 40)
+    
+    UICornerTitle.Parent = TitleBar
+    UICornerTitle.CornerRadius = UDim.new(0, 10)
+    
+    Title.Name = "Title"
+    Title.Parent = TitleBar
+    Title.BackgroundTransparency = 1
+    Title.Position = UDim2.new(0, 15, 0, 0)
+    Title.Size = UDim2.new(1, -40, 1, 0)
+    Title.Font = Enum.Font.GothamBold
+    Title.Text = name .. " - " .. path
+    Title.TextColor3 = Color3.fromRGB(255, 100, 100)
+    Title.TextSize = 16
+    Title.TextXAlignment = Enum.TextXAlignment.Left
+    
+    CloseButton.Name = "CloseButton"
+    CloseButton.Parent = TitleBar
+    CloseButton.BackgroundTransparency = 1
+    CloseButton.Position = UDim2.new(1, -40, 0, 0)
+    CloseButton.Size = UDim2.new(0, 40, 1, 0)
+    CloseButton.Font = Enum.Font.GothamBold
+    CloseButton.Text = "×"
+    CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    CloseButton.TextSize = 24
+    
+    CodeScrollFrame.Name = "CodeScrollFrame"
+    CodeScrollFrame.Parent = MainFrame
+    CodeScrollFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+    CodeScrollFrame.BorderSizePixel = 0
+    CodeScrollFrame.Position = UDim2.new(0, 15, 0, 50)
+    CodeScrollFrame.Size = UDim2.new(1, -30, 1, -110)
+    CodeScrollFrame.CanvasSize = UDim2.new(0, 0, 2, 0)  -- Will be updated based on content
+    CodeScrollFrame.ScrollBarThickness = 6
+    CodeScrollFrame.ScrollingDirection = Enum.ScrollingDirection.Y
+    
+    local codeFrameCorner = UICorner:Clone()
+    codeFrameCorner.Parent = CodeScrollFrame
+    
+    CodeText.Name = "CodeText"
+    CodeText.Parent = CodeScrollFrame
+    CodeText.BackgroundTransparency = 1
+    CodeText.Position = UDim2.new(0, 10, 0, 10)
+    CodeText.Size = UDim2.new(1, -20, 1, -20)
+    CodeText.Font = Enum.Font.Code
+    CodeText.Text = source or "No source available"
+    CodeText.TextColor3 = Color3.fromRGB(220, 220, 220)
+    CodeText.TextSize = 14
+    CodeText.TextXAlignment = Enum.TextXAlignment.Left
+    CodeText.TextYAlignment = Enum.TextYAlignment.Top
+    CodeText.ClearTextOnFocus = false
+    CodeText.TextEditable = false
+    CodeText.MultiLine = true
+    CodeText.TextWrapped = false
+    
+    CopyButton = Instance.new("TextButton")
+    CopyButton.Name = "CopyButton"
+    CopyButton.Parent = MainFrame
+    CopyButton.BackgroundColor3 = Color3.fromRGB(50, 50, 70)
+    CopyButton.Position = UDim2.new(0.5, -60, 1, -50)
+    CopyButton.Size = UDim2.new(0, 120, 0, 35)
+    CopyButton.Font = Enum.Font.GothamSemibold
+    CopyButton.Text = "Copy Code"
+    CopyButton.TextColor3 = Color3.fromRGB(200, 200, 255)
+    CopyButton.TextSize = 14
+    CopyButton.AutoButtonColor = true
+    
+    UICornerCopy.Parent = CopyButton
+    UICornerCopy.CornerRadius = UDim.new(0, 4)
+    
+    -- Update canvas size based on text content
+    local function updateCanvasSize()
+        local textLines = #string.split(CodeText.Text, "\n")
+        local lineHeight = 16 -- Approximate line height
+        local padding = 20 -- Padding
+        local newHeight = textLines * lineHeight + padding
+        CodeScrollFrame.CanvasSize = UDim2.new(0, 0, 0, newHeight)
+    end
+    
+    updateCanvasSize()
+    
+    -- Connect events
+    CloseButton.MouseButton1Click:Connect(function()
+        CodeViewerGui:Destroy()
+    end)
+    
+    CopyButton.MouseButton1Click:Connect(function()
+        pcall(function() setclipboard(CodeText.Text) end)
+        CopyButton.Text = "Copied!"
+        game:GetService("TweenService"):Create(CopyButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(70, 120, 70)}):Play()
+        wait(1)
+        CopyButton.Text = "Copy Code"
+        game:GetService("TweenService"):Create(CopyButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(50, 50, 70)}):Play()
+    end)
+    
+    -- Add hover effects for button
+    CopyButton.MouseEnter:Connect(function()
+        game:GetService("TweenService"):Create(CopyButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(60, 60, 90)}):Play()
+    end)
+    
+    CopyButton.MouseLeave:Connect(function()
+        game:GetService("TweenService"):Create(CopyButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(50, 50, 70)}):Play()
+    end)
+    
+    return CodeViewerGui
+end
+
+function UIModule.AddResult(path, name, source, instance)
     local ResultItem = Instance.new("Frame")
     local UICorner = Instance.new("UICorner")
     local NameLabel = Instance.new("TextLabel")
     local PathLabel = Instance.new("TextLabel")
-    local CopyButton = Instance.new("TextButton")
-    local UICornerCopy = Instance.new("UICorner")
+    local ViewButton = Instance.new("TextButton")
+    local UICornerView = Instance.new("UICorner")
     
     ResultItem.Name = "ResultItem"
     ResultItem.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
@@ -213,37 +355,58 @@ function UIModule.AddResult(path, name)
     PathLabel.TextSize = 12
     PathLabel.TextXAlignment = Enum.TextXAlignment.Left
     
-    CopyButton = Instance.new("TextButton")
-    CopyButton.Name = "CopyButton"
-    CopyButton.Parent = ResultItem
-    CopyButton.BackgroundColor3 = Color3.fromRGB(50, 50, 70)
-    CopyButton.Position = UDim2.new(1, -60, 0.5, -15)
-    CopyButton.Size = UDim2.new(0, 50, 0, 30)
-    CopyButton.Font = Enum.Font.GothamSemibold
-    CopyButton.Text = "Copy"
-    CopyButton.TextColor3 = Color3.fromRGB(200, 200, 255)
-    CopyButton.TextSize = 12
-    CopyButton.AutoButtonColor = true
+    ViewButton = Instance.new("TextButton")
+    ViewButton.Name = "ViewButton"
+    ViewButton.Parent = ResultItem
+    ViewButton.BackgroundColor3 = Color3.fromRGB(50, 50, 70)
+    ViewButton.Position = UDim2.new(1, -60, 0.5, -15)
+    ViewButton.Size = UDim2.new(0, 50, 0, 30)
+    ViewButton.Font = Enum.Font.GothamSemibold
+    ViewButton.Text = "View"
+    ViewButton.TextColor3 = Color3.fromRGB(200, 200, 255)
+    ViewButton.TextSize = 12
+    ViewButton.AutoButtonColor = true
     
-    UICornerCopy.Parent = CopyButton
-    UICornerCopy.CornerRadius = UDim.new(0, 4)
+    UICornerView.Parent = ViewButton
+    UICornerView.CornerRadius = UDim.new(0, 4)
     
-    -- Add hover and click effects for copy button
-    CopyButton.MouseEnter:Connect(function()
-        game:GetService("TweenService"):Create(CopyButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(60, 60, 90)}):Play()
+    -- Add hover and click effects for view button
+    ViewButton.MouseEnter:Connect(function()
+        game:GetService("TweenService"):Create(ViewButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(60, 60, 90)}):Play()
     end)
     
-    CopyButton.MouseLeave:Connect(function()
-        game:GetService("TweenService"):Create(CopyButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(50, 50, 70)}):Play()
+    ViewButton.MouseLeave:Connect(function()
+        game:GetService("TweenService"):Create(ViewButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(50, 50, 70)}):Play()
     end)
     
-    CopyButton.MouseButton1Click:Connect(function()
-        setclipboard(path)
-        CopyButton.Text = "Copied!"
-        game:GetService("TweenService"):Create(CopyButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(70, 120, 70)}):Play()
-        wait(1)
-        CopyButton.Text = "Copy"
-        game:GetService("TweenService"):Create(CopyButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(50, 50, 70)}):Play()
+    -- Store source for viewing later
+    ResultItem.Source = source
+    
+    ViewButton.MouseButton1Click:Connect(function()
+        -- If we don't have source yet, try to get it
+        if not source then
+            local success, result = pcall(function()
+                if typeof(decompile) == "function" and instance then
+                    return decompile(instance)
+                elseif typeof(getsource) == "function" and instance then
+                    return getsource(instance)
+                elseif typeof(getscriptbytecode) == "function" and instance then
+                    return getscriptbytecode(instance)
+                else
+                    return "Could not retrieve source code for this script."
+                end
+            end)
+            
+            if success and result then
+                source = result
+                ResultItem.Source = source
+            else
+                source = "Error retrieving source code."
+            end
+        end
+        
+        -- Create code viewer window
+        UIModule.CreateCodeViewer(name, path, source)
     end)
     
     ResultItem.Parent = UIModule.ResultsFrame
