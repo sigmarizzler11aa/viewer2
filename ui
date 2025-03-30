@@ -2,19 +2,21 @@ local UI = {}
 local TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")
 local Player = Players.LocalPlayer
+local UIS = game:GetService("UserInputService")
 
-function UI:Init()
+function UI:Init(scanCallback)
     local ScreenGui = Instance.new("ScreenGui", Player:FindFirstChildOfClass("PlayerGui"))
     
+    -- Main Frame
     local Frame = Instance.new("Frame", ScreenGui)
-    Frame.Size = UDim2.new(0.35, 0, 0.4, 0)
-    Frame.Position = UDim2.new(0.325, 0, 0.3, 0)
-    Frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    Frame.Size = UDim2.new(0.35, 0, 0.5, 0)
+    Frame.Position = UDim2.new(0.325, 0, 0.25, 0)
+    Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
     Frame.BackgroundTransparency = 0.2
     Frame.BorderSizePixel = 0
     Frame.ClipsDescendants = true
-    
-    -- Drop Shadow
+
+    -- Drop Shadow Effect
     local Shadow = Instance.new("ImageLabel", Frame)
     Shadow.Size = UDim2.new(1, 10, 1, 10)
     Shadow.Position = UDim2.new(0, -5, 0, -5)
@@ -24,17 +26,18 @@ function UI:Init()
 
     -- Title Bar
     local Title = Instance.new("TextLabel", Frame)
-    Title.Size = UDim2.new(1, 0, 0, 30)
+    Title.Size = UDim2.new(1, 0, 0, 40)
     Title.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    Title.Text = "⚠️ Script Detector"
+    Title.Text = "⚠️ Advanced Script Scanner"
     Title.Font = Enum.Font.GothamBold
-    Title.TextSize = 16
+    Title.TextSize = 18
     Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-    
+    Title.TextStrokeTransparency = 0.5
+
     -- Close Button
     local Close = Instance.new("TextButton", Frame)
-    Close.Size = UDim2.new(0, 30, 0, 30)
-    Close.Position = UDim2.new(1, -30, 0, 0)
+    Close.Size = UDim2.new(0, 40, 0, 40)
+    Close.Position = UDim2.new(1, -40, 0, 0)
     Close.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
     Close.Text = "✖"
     Close.Font = Enum.Font.GothamBold
@@ -47,10 +50,28 @@ function UI:Init()
         end)
     end)
 
+    -- Scan Button
+    local ScanButton = Instance.new("TextButton", Frame)
+    ScanButton.Size = UDim2.new(0.9, 0, 0, 40)
+    ScanButton.Position = UDim2.new(0.05, 0, 0, 50)
+    ScanButton.BackgroundColor3 = Color3.fromRGB(45, 130, 250)
+    ScanButton.Text = "🔍 Scan Now"
+    ScanButton.Font = Enum.Font.GothamBold
+    ScanButton.TextSize = 16
+    ScanButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+
+    -- Hover Animation
+    ScanButton.MouseEnter:Connect(function()
+        TweenService:Create(ScanButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(65, 150, 255)}):Play()
+    end)
+    ScanButton.MouseLeave:Connect(function()
+        TweenService:Create(ScanButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(45, 130, 250)}):Play()
+    end)
+
     -- List Frame
     local List = Instance.new("ScrollingFrame", Frame)
-    List.Size = UDim2.new(1, 0, 1, -30)
-    List.Position = UDim2.new(0, 0, 0, 30)
+    List.Size = UDim2.new(0.9, 0, 0.7, 0)
+    List.Position = UDim2.new(0.05, 0, 0, 100)
     List.BackgroundTransparency = 1
     List.AutomaticCanvasSize = Enum.AutomaticSize.Y
     List.CanvasSize = UDim2.new(0, 0, 1, 0)
@@ -60,15 +81,49 @@ function UI:Init()
     UIListLayout.Padding = UDim.new(0, 5)
     UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 
+    -- Scan Button Click Function
+    ScanButton.MouseButton1Click:Connect(function()
+        scanCallback()
+    end)
+
+    -- Dragging Support
+    local dragging, dragInput, dragStart, startPos
+
+    Title.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = Frame.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+
+    Title.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement then
+            dragInput = input
+        end
+    end)
+
+    UIS.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            local delta = input.Position - dragStart
+            Frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+
     UI.Frame, UI.List = Frame, List
 end
 
 function UI.AddResult(scriptPath)
     local Result = Instance.new("TextLabel", UI.List)
-    Result.Size = UDim2.new(1, -10, 0, 25)
+    Result.Size = UDim2.new(1, -10, 0, 30)
     Result.Position = UDim2.new(0, 5, 0, 0)
     Result.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-    Result.BackgroundTransparency = 0.3
+    Result.BackgroundTransparency = 0.2
     Result.Font = Enum.Font.Gotham
     Result.Text = "⚠️ " .. scriptPath
     Result.TextColor3 = Color3.fromRGB(255, 85, 85)
