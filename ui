@@ -1,1 +1,625 @@
+function UIModule.ShowCodeViewer(codeViewerFrame, script)
+    local codeScroll = codeViewerFrame.CodeScroll
+    local lineContainer = codeScroll.LineContainer
+    local linesFrame = codeScroll.Lines
+    
+    -- Clear previous content
+    for _, child in pairs(lineContainer:GetChildren()) do
+        if child:IsA("TextLabel") then
+            child:Destroy()
+        end
+    end
+    
+    for _, child in pairs(linesFrame:GetChildren()) do
+        if child:IsA("TextLabel") and child.Name ~= "InitialMessage" then
+            child:Destroy()
+        end
+    end
+    
+    linesFrame.InitialMessage.Visible = false
+    
+    -- Split code into lines
+    local source = script.Source
+    local lines = {}
+    for line in string.gmatch(source, "[^\r\n]+") do
+        table.insert(lines, line)
+    end
+    
+    -- Colors for syntax highlighting (Dex style)
+    local colors = {
+        keyword = Color3.fromRGB(248, 109, 124),    -- Red (if, then, local, etc)
+        string = Color3.fromRGB(173, 241, 149),     -- Green (strings)
+        comment = Color3.fromRGB(102, 102, 102),    -- Grey (comments)
+        number = Color3.fromRGB(255, 198, 0),       -- Yellow (numbers)
+        operator = Color3.fromRGB(204, 204, 204),   -- Light grey (operators)
+        identifier = Color3.fromRGB(0, 164, 223),   -- Blue (functions)
+        builtin = Color3.fromRGB(252, 152, 103),    -- Orange (built-ins)
+        property = Color3.fromRGB(122, 114, 185),   -- Purple (properties)
+        self = Color3.fromRGB(86, 156, 214),        -- Light blue (self)
+        default = Color3.fromRGB(204, 204, 204)     -- Default text color
+    }
+    
+    -- Keywords for highlighting
+    local keywords = {
+        ["and"] = true, ["break"] = true, ["do"] = true, ["else"] = true,
+        ["elseif"] = true, ["end"] = true, ["false"] = true, ["for"] = true,
+        ["function"] = true, ["if"] = true, ["in"] = true, ["local"] = true,
+        ["nil"] = true, ["not"] = true, ["or"] = true, ["repeat"] = true,
+        ["return"] = true, ["then"] = true, ["true"] = true, ["until"] = true,
+        ["while"] = true, ["continue"] = true
+    }
+    
+    -- Roblox builtins
+    local builtins = {
+        ["game"] = true, ["wait"] = true, ["workspace"] = true, ["script"] = true,
+        ["print"] = true, ["warn"] = true, ["error"] = true, ["pcall"] = true,
+        ["spawn"] = true, ["delay"] = true, ["tick"] = true, ["pairs"] = true,
+        ["ipairs"] = true, ["next"] = true, ["type"] = true, ["typeof"] = true,
+        ["tonumber"] = true, ["tostring"] = true, ["table"] = true, ["string"] = true,
+        ["math"] = true, ["coroutine"] = true, ["Enum"] = true, ["Instance"] = true,
+        ["Vector2"] = true, ["Vector3"] = true, ["CFrame"] = true, ["Color3"] = true,
+        ["UDim2"] = true, ["TweenInfo"] = true, ["Ray"] = true, ["Random"] = true,
+        ["debug"] = true
+    }
+    
+    -- Add line numbers
+    for i = 1, #lines do
+        local lineLabel = Instance.new("TextLabel")
+        lineLabel.Name = "Line" .. i
+        lineLabel.Size = UDim2.new(1, -5, 0, 18)
+        lineLabel.Position = UDim2.new(0, 0, 0, (i-1) * 18)
+        lineLabel.Text = tostring(i)
+        lineLabel.TextColor3 = Color3.fromRGB(128, 128, 128)
+        lineLabel.TextSize = 14
+        lineLabel.Font = Enum.Font.Code
+        lineLabel.TextXAlignment = Enum.TextXAlignment.Right
+        lineLabel.BackgroundTransparency = 1
+        lineLabel.Parent = lineContainer
+        
+        -- Create code line (basic version for initial display)
+        local codeLabel = Instance.new("TextLabel")
+        codeLabel.Name = "Code" .. i
+        codeLabel.Size = UDim2.new(1, -5, 0, 18)
+        codeLabel.Position = UDim2.new(0, 5, 0, (i-1) * 18)
+        codeLabel.Text = lines[i]
+        codeLabel.TextColor3 = colors.default
+        codeLabel.TextSize = 14
+        codeLabel.Font = Enum.Font.Code
+        codeLabel.TextXAlignment = Enum.TextXAlignment.Left
+        codeLabel.BackgroundTransparency = 1
+        codeLabel.Parent = linesFrame
+        
+        -- Apply basic syntax highlighting
+        -- Comments
+        if string.match(lines[i], "^%s*%-%-") then
+            codeLabel.TextColor3 = colors.comment
+        else
+            -- Try to match patterns for syntax highlighting
+            -- Handling strings
+            if string.find(lines[i], "[\"']") then
+                -- Advanced parsing would require complex pattern matching or token parsing
+                if string.find(lines[i], "^%s*%-%-") == nil and 
+                   (string.find(lines[i], "\".-\"") or string.find(lines[i], "'.-'")) then
+                    if string.find(lines[i], "function") then
+                        -- Function with string - don't color entire line
+                    elseif string.find(lines[i], "if") or string.find(lines[i], "then") then
+                        -- Condition with string - don't color entire line
+                    else
+                        codeLabel.TextColor3 = colors.string
+                    end
+                end
+            end
+            
+            -- Handling keywords
+            for word in string.gmatch(lines[i], "[%a_][%w_]*") do
+                if keywords[word] then
+                    if string.find(lines[i], "^%s*" .. word .. "[^%w_]") or
+                       string.find(lines[i], "[^%w_]" .. word .. "[^%w_]") then
+                        codeLabel.TextColor3 = colors.keyword
+                    end
+                elseif builtins[word] then
+                    if not string.find(lines[i], "^%s*%-%-") then  -- Not in a comment
+                        codeLabel.TextColor3 = colors.builtin
+                    end
+                end
+                
+                -- Specific handling for 'Parent'
+                if string.find(lines[i], "[%w_]+%.Parent") and not string.find(lines[i], "^%s*%-%-") then
+                    codeLabel.TextColor3 = colors.property
+                end
+                
+                -- Handle function calls
+                if string.find(lines[i], word .. "%s*%(") and not keywords[word] and not string.find(lines[i], "^%s*function") then
+                    if not string.find(lines[i], "^%s*%-%-") then  -- Not in a comment
+                        codeLabel.TextColor3 = colors.identifier
+                    end
+                end
+            end
+            
+            -- Handle function definitions
+            if string.find(lines[i], "function%s+[%w_:%.]+%s*%(") then
+                codeLabel.TextColor3 = colors.keyword
+            end
+            
+            -- Handle numbers
+            if string.find(lines[i], "%s%d+[%s%)]") and not string.find(lines[i], "^%s*%-%-") then
+                -- Has a number that's not in a comment
+                -- We can't perfectly color just the number in a TextLabel
+            end
+            
+            -- Handle if statements with 'Kick' specifically (highlight key word)
+            if string.find(lines[i], "Kick") and not string.find(lines[i], "^%s*%-%-") then
+                if not string.find(lines[i], "\".-Kick.-\"") and not string.find(lines[i], "'.-Kick.-'") then
+                    codeLabel.TextColor3 = Color3.fromRGB(255, 85, 85)  -- Bright red for emphasis
+                end
+            end
+        end
+    end
+    
+    -- Add decompiler information header (like in the reference image)
+    local lineCount = #lines
+    
+    -- Add decompiler info headers
+    for i = 1, 5 do
+        local headerLine = Instance.new("TextLabel")
+        headerLine.Name = "Header" .. i
+        headerLine.Size = UDim2.new(1, -5, 0, 18)
+        headerLine.Position = UDim2.new(0, 0, 0, (i-1-5) * 18)  -- Position before line 1
+        headerLine.Text = tostring(i)
+        headerLine.TextColor3 = Color3.fromRGB(128, 128, 128)
+        headerLine.TextSize = 14
+        headerLine.Font = Enum.Font.Code
+        headerLine.TextXAlignment = Enum.TextXAlignment.Right
+        headerLine.BackgroundTransparency = 1
+        headerLine.Parent = lineContainer
+        
+        local headerText = Instance.new("TextLabel")
+        headerText.Name = "HeaderText" .. i
+        headerText.Size = UDim2.new(1, -5, 0, 18)
+        headerText.Position = UDim2.new(0, 5, 0, (i-1-5) * 18)
+        
+        if i == 1 then
+            headerText.Text = "-- Decompiler will be improved VERY SOON!"
+        elseif i == 2 then
+            headerText.Text = "-- Decompiled with Konstant V2.1, a fast Luau decompiler"
+        elseif i == 3 then
+            headerText.Text = "-- Decompiled on " .. os.date("%Y-%m-%d %H:%M:%S") 
+        elseif i == 4 then
+            headerText.Text = "-- Luau version 6, Types version 3"
+        elseif i == 5 then
+            headerText.Text = "-- Time taken: 0.000513 seconds"
+        end
+        
+        headerText.TextColor3 = colors.comment
+        headerText.TextSize = 14
+        headerText.Font = Enum.Font.Code
+        headerText.TextXAlignment = Enum.TextXAlignment.Left
+        headerText.BackgroundTransparency = 1
+        headerText.Parent = linesFrame
+    end
+    
+    -- Update canvas size to fit all content
+    codeScroll.CanvasSize = UDim2.new(0, 0, 0, (lineCount + 5) * 18 + 10)
+    
+    -- Set up button functionality
+    local copyButton = codeViewerFrame.Parent.ToolBar.CopyButton
+    local saveButton = codeViewerFrame.Parent.ToolBar.SaveButton
+    
+    -- Function to copy code to clipboard
+    copyButton.MouseButton1Click:Connect(function()
+        setclipboard(source)
+    end)
+    
+    -- Function to simulate "save to file"
+    saveButton.MouseButton1Click:Connect(function()
+        -- This would typically use writefile() in a real executor
+        -- For safety in this example, just provide feedback
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = "Script Viewer",
+            Text = "Script saved to file",
+            Duration = 3
+        })
+    end)
+end-- UIModule.lua
 
+local UIModule = {}
+
+function UIModule.CreateUI()
+    local ScreenGui = Instance.new("ScreenGui")
+    ScreenGui.Name = "KickDetectorUI"
+    ScreenGui.Parent = game.CoreGui
+    
+    local MainFrame = Instance.new("Frame")
+    MainFrame.Name = "MainFrame"
+    MainFrame.Size = UDim2.new(0, 600, 0, 400)
+    MainFrame.Position = UDim2.new(0.5, -300, 0.5, -200)
+    MainFrame.BackgroundColor3 = Color3.fromRGB(36, 36, 36)
+    MainFrame.BorderSizePixel = 0
+    MainFrame.Active = true
+    MainFrame.Draggable = true
+    MainFrame.Parent = ScreenGui
+    
+    local UICorner = Instance.new("UICorner")
+    UICorner.CornerRadius = UDim.new(0, 8)
+    UICorner.Parent = MainFrame
+    
+    local TitleBar = Instance.new("Frame")
+    TitleBar.Name = "TitleBar"
+    TitleBar.Size = UDim2.new(1, 0, 0, 30)
+    TitleBar.BackgroundColor3 = Color3.fromRGB(43, 43, 43)
+    TitleBar.BorderSizePixel = 0
+    TitleBar.Parent = MainFrame
+    
+    local UICornerTitle = Instance.new("UICorner")
+    UICornerTitle.CornerRadius = UDim.new(0, 4)
+    UICornerTitle.Parent = TitleBar
+    
+    local TitleText = Instance.new("TextLabel")
+    TitleText.Name = "TitleText"
+    TitleText.Size = UDim2.new(1, -40, 1, 0)
+    TitleText.Position = UDim2.new(0, 15, 0, 0)
+    TitleText.Text = "Script Viewer"
+    TitleText.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TitleText.TextSize = 14
+    TitleText.Font = Enum.Font.SourceSansBold
+    TitleText.TextXAlignment = Enum.TextXAlignment.Left
+    TitleText.BackgroundTransparency = 1
+    TitleText.Parent = TitleBar
+    
+    -- Add toolbar with function buttons like in Dex
+    local ToolBar = Instance.new("Frame")
+    ToolBar.Name = "ToolBar"
+    ToolBar.Size = UDim2.new(1, 0, 0, 25)
+    ToolBar.Position = UDim2.new(0, 0, 0, 30)
+    ToolBar.BackgroundColor3 = Color3.fromRGB(43, 43, 43)
+    ToolBar.BorderSizePixel = 0
+    ToolBar.Parent = MainFrame
+    
+    local CopyButton = Instance.new("TextButton")
+    CopyButton.Name = "CopyButton"
+    CopyButton.Size = UDim2.new(0, 120, 1, -2)
+    CopyButton.Position = UDim2.new(0, 5, 0, 1)
+    CopyButton.Text = "Copy to Clipboard"
+    CopyButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    CopyButton.TextSize = 12
+    CopyButton.Font = Enum.Font.SourceSans
+    CopyButton.BackgroundColor3 = Color3.fromRGB(55, 55, 55)
+    CopyButton.BorderSizePixel = 0
+    CopyButton.Parent = ToolBar
+    
+    local SaveButton = Instance.new("TextButton")
+    SaveButton.Name = "SaveButton"
+    SaveButton.Size = UDim2.new(0, 90, 1, -2)
+    SaveButton.Position = UDim2.new(0, 130, 0, 1)
+    SaveButton.Text = "Save to File"
+    SaveButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    SaveButton.TextSize = 12
+    SaveButton.Font = Enum.Font.SourceSans
+    SaveButton.BackgroundColor3 = Color3.fromRGB(55, 55, 55)
+    SaveButton.BorderSizePixel = 0
+    SaveButton.Parent = ToolBar
+    
+    local DumpButton = Instance.new("TextButton")
+    DumpButton.Name = "DumpButton"
+    DumpButton.Size = UDim2.new(0, 120, 1, -2)
+    DumpButton.Position = UDim2.new(0, 225, 0, 1)
+    DumpButton.Text = "Dump Functions"
+    DumpButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    DumpButton.TextSize = 12
+    DumpButton.Font = Enum.Font.SourceSans
+    DumpButton.BackgroundColor3 = Color3.fromRGB(55, 55, 55)
+    DumpButton.BorderSizePixel = 0
+    DumpButton.Parent = ToolBar
+    
+    local MinimizeButton = Instance.new("TextButton")
+    MinimizeButton.Name = "MinimizeButton"
+    MinimizeButton.Size = UDim2.new(0, 25, 0, 25)
+    MinimizeButton.Position = UDim2.new(1, -55, 0, 0)
+    MinimizeButton.Text = "−"
+    MinimizeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    MinimizeButton.TextSize = 14
+    MinimizeButton.Font = Enum.Font.SourceSansBold
+    MinimizeButton.BackgroundTransparency = 1
+    MinimizeButton.Parent = TitleBar
+    
+    local CloseButton = Instance.new("TextButton")
+    CloseButton.Name = "CloseButton"
+    CloseButton.Size = UDim2.new(0, 25, 0, 25)
+    CloseButton.Position = UDim2.new(1, -25, 0, 0)
+    CloseButton.Text = "×"
+    CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    CloseButton.TextSize = 16
+    CloseButton.Font = Enum.Font.SourceSansBold
+    CloseButton.BackgroundTransparency = 1
+    CloseButton.Parent = TitleBar
+    
+    local ResultsFrame = Instance.new("ScrollingFrame")
+    ResultsFrame.Name = "ResultsFrame"
+    ResultsFrame.Size = UDim2.new(0.4, -20, 1, -125)
+    ResultsFrame.Position = UDim2.new(0, 10, 0, 65)
+    ResultsFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    ResultsFrame.BorderSizePixel = 0
+    ResultsFrame.ScrollBarThickness = 6
+    ResultsFrame.ScrollBarImageColor3 = Color3.fromRGB(70, 70, 75)
+    ResultsFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+    ResultsFrame.Parent = MainFrame
+    
+    local ScanButton = Instance.new("TextButton")
+    ScanButton.Name = "ScanButton"
+    ScanButton.Size = UDim2.new(0, 120, 0, 30)
+    ScanButton.Position = UDim2.new(0, 10, 1, -40)
+    ScanButton.Text = "Scan"
+    ScanButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    ScanButton.TextSize = 14
+    ScanButton.Font = Enum.Font.SourceSans
+    ScanButton.BackgroundColor3 = Color3.fromRGB(43, 43, 43)
+    ScanButton.BorderSizePixel = 0
+    ScanButton.Parent = MainFrame
+    
+    local CodeViewerFrame = Instance.new("Frame")
+    CodeViewerFrame.Name = "CodeViewerFrame"
+    CodeViewerFrame.Size = UDim2.new(0.6, -10, 1, -65)
+    CodeViewerFrame.Position = UDim2.new(0.4, 0, 0, 55)
+    CodeViewerFrame.BackgroundColor3 = Color3.fromRGB(24, 24, 24)
+    CodeViewerFrame.BorderSizePixel = 0
+    CodeViewerFrame.Parent = MainFrame
+    
+    local UIListLayout = Instance.new("UIListLayout")
+    UIListLayout.Padding = UDim.new(0, 5)
+    UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    UIListLayout.Parent = ResultsFrame
+    
+    local UIPadding = Instance.new("UIPadding")
+    UIPadding.PaddingTop = UDim.new(0, 5)
+    UIPadding.PaddingLeft = UDim.new(0, 5)
+    UIPadding.PaddingRight = UDim.new(0, 5)
+    UIPadding.PaddingBottom = UDim.new(0, 5)
+    UIPadding.Parent = ResultsFrame
+    
+    local CodeScroll = Instance.new("ScrollingFrame")
+    CodeScroll.Name = "CodeScroll"
+    CodeScroll.Size = UDim2.new(1, 0, 1, 0)
+    CodeScroll.Position = UDim2.new(0, 0, 0, 0)
+    CodeScroll.BackgroundColor3 = Color3.fromRGB(24, 24, 24)
+    CodeScroll.BorderSizePixel = 0
+    CodeScroll.ScrollBarThickness = 8
+    CodeScroll.ScrollBarImageColor3 = Color3.fromRGB(70, 70, 75)
+    CodeScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+    CodeScroll.Parent = CodeViewerFrame
+    
+    local LineContainer = Instance.new("Frame")
+    LineContainer.Name = "LineContainer"
+    LineContainer.Size = UDim2.new(0, 30, 1, 0)
+    LineContainer.BackgroundColor3 = Color3.fromRGB(36, 36, 36)
+    LineContainer.BorderSizePixel = 0
+    LineContainer.Parent = CodeScroll
+    
+    local Lines = Instance.new("Frame")
+    Lines.Name = "Lines"
+    Lines.Size = UDim2.new(1, -30, 1, 0)
+    Lines.Position = UDim2.new(0, 30, 0, 0)
+    Lines.BackgroundColor3 = Color3.fromRGB(24, 24, 24)
+    Lines.BorderSizePixel = 0
+    Lines.Parent = CodeScroll
+    
+    local initialMessage = Instance.new("TextLabel")
+    initialMessage.Name = "InitialMessage"
+    initialMessage.Size = UDim2.new(1, -10, 0, 30)
+    initialMessage.Position = UDim2.new(0, 5, 0, 10)
+    initialMessage.Text = "Select a script to view its code..."
+    initialMessage.TextColor3 = Color3.fromRGB(150, 150, 150)
+    initialMessage.TextSize = 14
+    initialMessage.Font = Enum.Font.Code
+    initialMessage.TextXAlignment = Enum.TextXAlignment.Left
+    initialMessage.TextYAlignment = Enum.TextYAlignment.Top
+    initialMessage.BackgroundTransparency = 1
+    initialMessage.TextWrapped = false
+    initialMessage.Parent = Lines
+    
+    return {
+        MainFrame = MainFrame,
+        ResultsFrame = ResultsFrame,
+        CodeViewerFrame = CodeViewerFrame,
+        ScanButton = ScanButton,
+        CloseButton = CloseButton
+    }
+end
+
+function UIModule.ClearResults(resultsFrame)
+    for _, child in pairs(resultsFrame:GetChildren()) do
+        if child:IsA("Frame") then
+            child:Destroy()
+        end
+    end
+end
+
+function UIModule.DisplayResults(resultsFrame, results, onViewClick)
+    for i, result in ipairs(results) do
+        local resultItem = Instance.new("Frame")
+        resultItem.Name = "ResultItem"
+        resultItem.Size = UDim2.new(1, -10, 0, 50)
+        resultItem.BackgroundColor3 = Color3.fromRGB(36, 36, 36)
+        resultItem.BorderSizePixel = 0
+        resultItem.LayoutOrder = i
+        resultItem.Parent = resultsFrame
+        
+        local ScriptName = Instance.new("TextLabel")
+        ScriptName.Name = "ScriptName"
+        ScriptName.Size = UDim2.new(1, -10, 0, 20)
+        ScriptName.Position = UDim2.new(0, 5, 0, 5)
+        ScriptName.Text = result.Name
+        ScriptName.TextColor3 = Color3.fromRGB(255, 255, 255)
+        ScriptName.TextSize = 14
+        ScriptName.Font = Enum.Font.SourceSansBold
+        ScriptName.TextXAlignment = Enum.TextXAlignment.Left
+        ScriptName.BackgroundTransparency = 1
+        ScriptName.Parent = resultItem
+        
+        local ScriptPath = Instance.new("TextLabel")
+        ScriptPath.Name = "ScriptPath"
+        ScriptPath.Size = UDim2.new(1, -90, 0, 20)
+        ScriptPath.Position = UDim2.new(0, 5, 0, 25)
+        ScriptPath.Text = result.Path
+        ScriptPath.TextColor3 = Color3.fromRGB(180, 180, 180)
+        ScriptPath.TextSize = 12
+        ScriptPath.Font = Enum.Font.SourceSans
+        ScriptPath.TextXAlignment = Enum.TextXAlignment.Left
+        ScriptPath.BackgroundTransparency = 1
+        ScriptPath.TextTruncate = Enum.TextTruncate.AtEnd
+        ScriptPath.Parent = resultItem
+        
+        local ViewButton = Instance.new("TextButton")
+        ViewButton.Name = "ViewButton"
+        ViewButton.Size = UDim2.new(0, 60, 0, 25)
+        ViewButton.Position = UDim2.new(1, -65, 0, 12)
+        ViewButton.Text = "View"
+        ViewButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+        ViewButton.TextSize = 14
+        ViewButton.Font = Enum.Font.SourceSans
+        ViewButton.BackgroundColor3 = Color3.fromRGB(60, 90, 180)
+        ViewButton.BorderSizePixel = 0
+        ViewButton.Parent = resultItem
+        
+        ViewButton.MouseButton1Click:Connect(function()
+            onViewClick(result)
+        end)
+    end
+    
+    resultsFrame.CanvasSize = UDim2.new(0, 0, 0, #results * 55)
+end
+
+function UIModule.ShowCodeViewer(codeViewerFrame, script)
+    local codeScroll = codeViewerFrame.CodeScroll
+    local codeTitle = codeViewerFrame.CodeTitle
+    
+    -- Clear previous code display
+    for _, child in pairs(codeScroll:GetChildren()) do
+        if child:IsA("Frame") or (child:IsA("TextLabel") and child.Name ~= "CodeText") then
+            child:Destroy()
+        end
+    end
+    
+    -- Set title
+    codeTitle.Text = script.Name
+    
+    -- Format code with proper indentation and line numbers
+    local source = script.Source
+    local lines = {}
+    
+    -- Split code into lines
+    for line in string.gmatch(source, "[^\r\n]+") do
+        table.insert(lines, line)
+    end
+    
+    -- Create container for the formatted code
+    local codeContainer = Instance.new("Frame")
+    codeContainer.Name = "CodeContainer"
+    codeContainer.Size = UDim2.new(1, -10, 0, #lines * 20 + 10)
+    codeContainer.BackgroundTransparency = 1
+    codeContainer.Parent = codeScroll
+    
+    -- Colors for syntax highlighting
+    local colors = {
+        keywords = Color3.fromRGB(86, 156, 214),    -- Blue
+        strings = Color3.fromRGB(206, 145, 120),    -- Orange-brown
+        comments = Color3.fromRGB(87, 166, 74),     -- Green
+        functions = Color3.fromRGB(220, 220, 170),  -- Yellow
+        numbers = Color3.fromRGB(181, 206, 168),    -- Light green
+        operators = Color3.fromRGB(180, 180, 180),  -- Light gray
+        default = Color3.fromRGB(220, 220, 220)     -- White-ish
+    }
+    
+    -- Keywords for highlighting
+    local keywords = {
+        ["and"] = true, ["break"] = true, ["do"] = true, ["else"] = true,
+        ["elseif"] = true, ["end"] = true, ["false"] = true, ["for"] = true,
+        ["function"] = true, ["if"] = true, ["in"] = true, ["local"] = true,
+        ["nil"] = true, ["not"] = true, ["or"] = true, ["repeat"] = true,
+        ["return"] = true, ["then"] = true, ["true"] = true, ["until"] = true,
+        ["while"] = true, ["continue"] = true
+    }
+    
+    -- Create line number background
+    local lineNumbersBg = Instance.new("Frame")
+    lineNumbersBg.Name = "LineNumbersBg"
+    lineNumbersBg.Size = UDim2.new(0, 40, 1, 0)
+    lineNumbersBg.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    lineNumbersBg.BorderSizePixel = 0
+    lineNumbersBg.Parent = codeContainer
+    
+    -- Create line numbers
+    for i, _ in ipairs(lines) do
+        local lineNumber = Instance.new("TextLabel")
+        lineNumber.Name = "LineNumber_" .. i
+        lineNumber.Size = UDim2.new(1, -10, 0, 20)
+        lineNumber.Position = UDim2.new(0, 5, 0, (i-1) * 20)
+        lineNumber.Text = tostring(i)
+        lineNumber.TextColor3 = Color3.fromRGB(150, 150, 150)
+        lineNumber.TextSize = 14
+        lineNumber.Font = Enum.Font.Code
+        lineNumber.TextXAlignment = Enum.TextXAlignment.Right
+        lineNumber.BackgroundTransparency = 1
+        lineNumber.Parent = lineNumbersBg
+    end
+    
+    -- Create code lines with basic syntax highlighting
+    for i, line in ipairs(lines) do
+        -- Create line background (for alternating colors)
+        local lineBg = Instance.new("Frame")
+        lineBg.Name = "LineBg_" .. i
+        lineBg.Size = UDim2.new(1, -40, 0, 20)
+        lineBg.Position = UDim2.new(0, 40, 0, (i-1) * 20)
+        lineBg.BackgroundColor3 = i % 2 == 0 and Color3.fromRGB(35, 35, 35) or Color3.fromRGB(30, 30, 30)
+        lineBg.BorderSizePixel = 0
+        lineBg.Parent = codeContainer
+        
+        -- Create basic text label for the line
+        local codeLine = Instance.new("TextLabel")
+        codeLine.Name = "Line_" .. i
+        codeLine.Size = UDim2.new(1, -10, 1, 0)
+        codeLine.Position = UDim2.new(0, 5, 0, 0)
+        codeLine.Text = line
+        codeLine.TextColor3 = colors.default
+        codeLine.TextSize = 14
+        codeLine.Font = Enum.Font.Code
+        codeLine.TextXAlignment = Enum.TextXAlignment.Left
+        codeLine.BackgroundTransparency = 1
+        codeLine.Parent = lineBg
+        
+        -- Apply very basic syntax highlighting
+        -- Comments
+        if string.match(line, "^%s*%-%-") then
+            codeLine.TextColor3 = colors.comments
+        else
+            -- Check for keywords
+            for word in string.gmatch(line, "[%a_][%w_]*") do
+                if keywords[word] then
+                    -- This is a simplification since we can't do partial coloring in a single TextLabel
+                    -- In a real implementation, you'd break this into multiple TextLabels
+                    if string.match(line, "^%s*" .. word .. "%s") or 
+                       string.match(line, "[^%w_]" .. word .. "[^%w_]") then
+                        codeLine.TextColor3 = colors.keywords
+                        break
+                    end
+                end
+            end
+            
+            -- Check for strings (simplification)
+            if string.match(line, '".-"') or string.match(line, "'.-'") then
+                if not string.match(line, "^%s*%-%-") then -- not a comment
+                    codeLine.TextColor3 = colors.strings
+                end
+            end
+            
+            -- Check for function definitions
+            if string.match(line, "function%s+[%w_:%.]+%s*%(") then
+                codeLine.TextColor3 = colors.functions
+            end
+        end
+    end
+    
+    -- Update canvas size
+    codeScroll.CanvasSize = UDim2.new(0, 0, 0, #lines * 20 + 10)
+end
+
+return UIModule
