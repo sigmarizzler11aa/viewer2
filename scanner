@@ -58,8 +58,16 @@ function ScannerModule.ScanInstance(instance, searchTerm, results, foundPaths)
                 -- Only add this path if we haven't found it before
                 if not foundPaths[path] then
                     foundPaths[path] = true
-                    table.insert(results, {path = path, name = instance.Name, source = source, instance = instance})
-                    UI.AddResult(path, instance.Name, source, instance)
+                    
+                    -- Store the instance reference for later decompilation, not the source itself
+                    table.insert(results, {
+                        path = path,
+                        name = instance.Name,
+                        instance = instance
+                    })
+                    
+                    -- Pass only the required information to the UI
+                    UI.AddResult(path, instance.Name, nil, instance)
                 end
             end
         end
