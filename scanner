@@ -29,7 +29,10 @@ function ScannerModule.GetPath(instance)
     return path
 end
 
-function ScannerModule.ScanInstance(instance, searchTerm, results)
+function ScannerModule.ScanInstance(instance, searchTerm, results, foundPaths)
+    -- Initialize foundPaths table if it doesn't exist
+    foundPaths = foundPaths or {}
+    
     -- Add a pcall around the entire function to prevent errors from breaking the scan
     local success, err = pcall(function()
         if instance:IsA("LocalScript") then
@@ -51,13 +54,18 @@ function ScannerModule.ScanInstance(instance, searchTerm, results)
             
             if success and source and typeof(source) == "string" and string.find(source, searchTerm, 1, true) then
                 local path = ScannerModule.GetPath(instance)
-                table.insert(results, {path = path, name = instance.Name})
-                UI.AddResult(path, instance.Name)
+                
+                -- Only add this path if we haven't found it before
+                if not foundPaths[path] then
+                    foundPaths[path] = true
+                    table.insert(results, {path = path, name = instance.Name, source = source, instance = instance})
+                    UI.AddResult(path, instance.Name, source, instance)
+                end
             end
         end
         
         for _, child in ipairs(instance:GetChildren()) do
-            ScannerModule.ScanInstance(child, searchTerm, results)
+            ScannerModule.ScanInstance(child, searchTerm, results, foundPaths)
         end
     end)
     
@@ -68,6 +76,7 @@ end
 
 function ScannerModule.StartScan(searchTerm)
     local results = {}
+    local foundPaths = {}
     
     UI.UpdateStatus("Scanning for '" .. searchTerm .. "'...")
     
@@ -93,7 +102,7 @@ function ScannerModule.StartScan(searchTerm)
         
         -- Wrap in pcall for extra safety
         local success, err = pcall(function()
-            ScannerModule.ScanInstance(game, searchTerm, results)
+            ScannerModule.ScanInstance(game, searchTerm, results, foundPaths)
         end)
         
         -- Restore button state
@@ -108,7 +117,7 @@ function ScannerModule.StartScan(searchTerm)
         elseif #results == 0 then
             UI.UpdateStatus("Scan complete. No matches found for '" .. searchTerm .. "'.")
         else
-            UI.UpdateStatus("Found " .. #results .. " script(s) containing '" .. searchTerm .. "'.")
+            UI.UpdateStatus("Found " .. #results .. " unique script(s) containing '" .. searchTerm .. "'.")
         end
     end)()
     
