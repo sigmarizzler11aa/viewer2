@@ -3,6 +3,18 @@ local UI
 
 function ScannerModule.Initialize(UIModule)
     UI = UIModule
+    
+    -- Connect the scan button
+    UI.ScanButton.MouseButton1Click:Connect(function()
+        local searchTerm = UI.SearchBox.Text
+        if searchTerm == "" then
+            searchTerm = "Kick"
+            UI.SearchBox.Text = "Kick"
+        end
+        
+        UI.ClearResults()
+        ScannerModule.StartScan(searchTerm)
+    end)
 end
 
 function ScannerModule.GetPath(instance)
@@ -40,13 +52,35 @@ function ScannerModule.StartScan(searchTerm)
     
     UI.UpdateStatus("Scanning for '" .. searchTerm .. "'...")
     
+    -- Visual feedback for scanning
+    local originalColor = UI.ScanButton.BackgroundColor3
+    UI.ScanButton.BackgroundColor3 = Color3.fromRGB(70, 120, 70)
+    UI.ScanButton.Text = "SCANNING..."
+    UI.ScanButton.AutoButtonColor = false
+    
     task.spawn(function()
+        -- Add a small pulsing effect during scanning
+        local tweenInfo = TweenInfo.new(0.8, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true)
+        local tween = game:GetService("TweenService"):Create(
+            UI.BlurEffect, 
+            tweenInfo, 
+            {Size = 15}
+        )
+        tween:Play()
+        
         ScannerModule.ScanInstance(game, searchTerm, results)
         
+        -- Restore button state
+        UI.ScanButton.BackgroundColor3 = originalColor
+        UI.ScanButton.Text = "SCAN"
+        UI.ScanButton.AutoButtonColor = true
+        tween:Cancel()
+        UI.BlurEffect.Size = 10
+        
         if #results == 0 then
-            UI.UpdateStatus("Scan complete. No matches found.")
+            UI.UpdateStatus("Scan complete. No matches found for '" .. searchTerm .. "'.")
         else
-            UI.UpdateStatus("Scan complete. Found " .. #results .. " script(s) containing '" .. searchTerm .. "'.")
+            UI.UpdateStatus("Found " .. #results .. " script(s) containing '" .. searchTerm .. "'.")
         end
     end)
     
