@@ -265,19 +265,19 @@ function UIModule.CreateCodeViewer(name, path, source)
     CodeText.MultiLine = true
     CodeText.TextWrapped = false
     
-    CopyButton = Instance.new("TextButton")
-    CopyButton.Name = "CopyButton"
-    CopyButton.Parent = MainFrame
-    CopyButton.BackgroundColor3 = Color3.fromRGB(50, 50, 70)
-    CopyButton.Position = UDim2.new(0.5, -60, 1, -50)
-    CopyButton.Size = UDim2.new(0, 120, 0, 35)
-    CopyButton.Font = Enum.Font.GothamSemibold
-    CopyButton.Text = "Copy Code"
-    CopyButton.TextColor3 = Color3.fromRGB(200, 200, 255)
-    CopyButton.TextSize = 14
-    CopyButton.AutoButtonColor = true
+    local SaveButton = Instance.new("TextButton")
+    SaveButton.Name = "SaveButton"
+    SaveButton.Parent = MainFrame
+    SaveButton.BackgroundColor3 = Color3.fromRGB(50, 50, 70)
+    SaveButton.Position = UDim2.new(0.5, -60, 1, -50)
+    SaveButton.Size = UDim2.new(0, 120, 0, 35)
+    SaveButton.Font = Enum.Font.GothamSemibold
+    SaveButton.Text = "Save to File"
+    SaveButton.TextColor3 = Color3.fromRGB(200, 200, 255)
+    SaveButton.TextSize = 14
+    SaveButton.AutoButtonColor = true
     
-    UICornerCopy.Parent = CopyButton
+    UICornerCopy.Parent = SaveButton
     UICornerCopy.CornerRadius = UDim.new(0, 4)
     
     -- Update canvas size based on text content
@@ -296,22 +296,32 @@ function UIModule.CreateCodeViewer(name, path, source)
         CodeViewerGui:Destroy()
     end)
     
-    CopyButton.MouseButton1Click:Connect(function()
-        pcall(function() setclipboard(CodeText.Text) end)
-        CopyButton.Text = "Copied!"
-        game:GetService("TweenService"):Create(CopyButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(70, 120, 70)}):Play()
+    SaveButton.MouseButton1Click:Connect(function()
+        pcall(function() 
+            -- Try to save to file, falling back to clipboard if necessary
+            if typeof(writefile) == "function" then
+                local filename = name .. "_source.lua"
+                writefile(filename, CodeText.Text)
+                SaveButton.Text = "Saved!"
+            else
+                setclipboard(CodeText.Text)
+                SaveButton.Text = "Copied!"
+            end
+        end)
+        
+        game:GetService("TweenService"):Create(SaveButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(70, 120, 70)}):Play()
         wait(1)
-        CopyButton.Text = "Copy Code"
-        game:GetService("TweenService"):Create(CopyButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(50, 50, 70)}):Play()
+        SaveButton.Text = "Save to File"
+        game:GetService("TweenService"):Create(SaveButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(50, 50, 70)}):Play()
     end)
     
     -- Add hover effects for button
-    CopyButton.MouseEnter:Connect(function()
-        game:GetService("TweenService"):Create(CopyButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(60, 60, 90)}):Play()
+    SaveButton.MouseEnter:Connect(function()
+        game:GetService("TweenService"):Create(SaveButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(60, 60, 90)}):Play()
     end)
     
-    CopyButton.MouseLeave:Connect(function()
-        game:GetService("TweenService"):Create(CopyButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(50, 50, 70)}):Play()
+    SaveButton.MouseLeave:Connect(function()
+        game:GetService("TweenService"):Create(SaveButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(50, 50, 70)}):Play()
     end)
     
     return CodeViewerGui
