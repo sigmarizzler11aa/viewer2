@@ -128,7 +128,7 @@ end
 function ScannerModule.TestScan()
     print("Testing scan...")
     UI.UpdateStatus("Testing scan system...")
-    UI.AddResult("Test/Path/Script", "TestScript")
+    UI.AddResult("Test/Path/Script", "TestScript", "-- This is sample code\nlocal function kickPlayer(player)\n    player:Kick(\"You have been kicked.\")\nend")
     return true
 end
 
