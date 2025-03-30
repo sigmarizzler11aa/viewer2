@@ -1,0 +1,130 @@
+local UIModule = {}
+
+function UIModule.Initialize()
+    local ScreenGui = Instance.new("ScreenGui")
+    local MainFrame = Instance.new("Frame")
+    local TitleBar = Instance.new("Frame")
+    local Title = Instance.new("TextLabel")
+    local CloseButton = Instance.new("TextButton")
+    local ResultsFrame = Instance.new("ScrollingFrame")
+    local UIListLayout = Instance.new("UIListLayout")
+    local StatusLabel = Instance.new("TextLabel")
+    
+    ScreenGui.Name = "KickFinderGUI"
+    ScreenGui.Parent = game:GetService("CoreGui")
+    ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    
+    MainFrame.Name = "MainFrame"
+    MainFrame.Parent = ScreenGui
+    MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+    MainFrame.BorderSizePixel = 0
+    MainFrame.Position = UDim2.new(0.5, -200, 0.5, -150)
+    MainFrame.Size = UDim2.new(0, 400, 0, 300)
+    MainFrame.Active = true
+    MainFrame.Draggable = true
+    
+    TitleBar.Name = "TitleBar"
+    TitleBar.Parent = MainFrame
+    TitleBar.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
+    TitleBar.BorderSizePixel = 0
+    TitleBar.Size = UDim2.new(1, 0, 0, 30)
+    
+    Title.Name = "Title"
+    Title.Parent = TitleBar
+    Title.BackgroundTransparency = 1
+    Title.Position = UDim2.new(0, 10, 0, 0)
+    Title.Size = UDim2.new(1, -40, 1, 0)
+    Title.Font = Enum.Font.GothamBold
+    Title.Text = "Kick Finder"
+    Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Title.TextSize = 16
+    Title.TextXAlignment = Enum.TextXAlignment.Left
+    
+    CloseButton.Name = "CloseButton"
+    CloseButton.Parent = TitleBar
+    CloseButton.BackgroundTransparency = 1
+    CloseButton.Position = UDim2.new(1, -30, 0, 0)
+    CloseButton.Size = UDim2.new(0, 30, 1, 0)
+    CloseButton.Font = Enum.Font.GothamBold
+    CloseButton.Text = "X"
+    CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    CloseButton.TextSize = 18
+    
+    ResultsFrame.Name = "ResultsFrame"
+    ResultsFrame.Parent = MainFrame
+    ResultsFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+    ResultsFrame.BorderSizePixel = 0
+    ResultsFrame.Position = UDim2.new(0, 10, 0, 40)
+    ResultsFrame.Size = UDim2.new(1, -20, 1, -50)
+    ResultsFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+    ResultsFrame.ScrollBarThickness = 6
+    ResultsFrame.ScrollingDirection = Enum.ScrollingDirection.Y
+    
+    UIListLayout.Parent = ResultsFrame
+    UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    UIListLayout.Padding = UDim.new(0, 5)
+    
+    StatusLabel.Name = "StatusLabel"
+    StatusLabel.Parent = MainFrame
+    StatusLabel.BackgroundTransparency = 1
+    StatusLabel.Position = UDim2.new(0, 10, 1, -30)
+    StatusLabel.Size = UDim2.new(1, -20, 0, 20)
+    StatusLabel.Font = Enum.Font.Gotham
+    StatusLabel.Text = "Ready to scan..."
+    StatusLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+    StatusLabel.TextSize = 14
+    StatusLabel.TextXAlignment = Enum.TextXAlignment.Left
+    
+    CloseButton.MouseButton1Click:Connect(function()
+        ScreenGui:Destroy()
+    end)
+    
+    UIModule.ScreenGui = ScreenGui
+    UIModule.ResultsFrame = ResultsFrame
+    UIModule.StatusLabel = StatusLabel
+    
+    return UIModule
+end
+
+function UIModule.UpdateStatus(text)
+    UIModule.StatusLabel.Text = text
+end
+
+function UIModule.AddResult(path, name)
+    local ResultItem = Instance.new("Frame")
+    local NameLabel = Instance.new("TextLabel")
+    local PathLabel = Instance.new("TextLabel")
+    
+    ResultItem.Name = "ResultItem"
+    ResultItem.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
+    ResultItem.BorderSizePixel = 0
+    ResultItem.Size = UDim2.new(1, -10, 0, 50)
+    
+    NameLabel.Name = "NameLabel"
+    NameLabel.Parent = ResultItem
+    NameLabel.BackgroundTransparency = 1
+    NameLabel.Position = UDim2.new(0, 10, 0, 5)
+    NameLabel.Size = UDim2.new(1, -20, 0, 20)
+    NameLabel.Font = Enum.Font.GothamBold
+    NameLabel.Text = name
+    NameLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+    NameLabel.TextSize = 14
+    NameLabel.TextXAlignment = Enum.TextXAlignment.Left
+    
+    PathLabel.Name = "PathLabel"
+    PathLabel.Parent = ResultItem
+    PathLabel.BackgroundTransparency = 1
+    PathLabel.Position = UDim2.new(0, 10, 0, 25)
+    PathLabel.Size = UDim2.new(1, -20, 0, 20)
+    PathLabel.Font = Enum.Font.Gotham
+    PathLabel.Text = path
+    PathLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+    PathLabel.TextSize = 12
+    PathLabel.TextXAlignment = Enum.TextXAlignment.Left
+    
+    ResultItem.Parent = UIModule.ResultsFrame
+    
+    UIModule.ResultsFrame.CanvasSize = UDim2.new(0, 0, 0, UIModule.ResultsFrame.UIListLayout.AbsoluteContentSize.Y)
+end
+
+return UIModule
