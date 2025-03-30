@@ -140,19 +140,19 @@ function UIModule.CreateUI()
     UICornerScroll.CornerRadius = UDim.new(0, 4)
     UICornerScroll.Parent = CodeScroll
     
-    local CodeText = Instance.new("TextLabel")
-    CodeText.Name = "CodeText"
-    CodeText.Size = UDim2.new(1, -10, 1, 0)
-    CodeText.Position = UDim2.new(0, 5, 0, 0)
-    CodeText.Text = "Select a script to view its code..."
-    CodeText.TextColor3 = Color3.fromRGB(200, 200, 200)
-    CodeText.TextSize = 14
-    CodeText.Font = Enum.Font.Code
-    CodeText.TextXAlignment = Enum.TextXAlignment.Left
-    CodeText.TextYAlignment = Enum.TextYAlignment.Top
-    CodeText.BackgroundTransparency = 1
-    CodeText.TextWrapped = false
-    CodeText.Parent = CodeScroll
+    local initialMessage = Instance.new("TextLabel")
+    initialMessage.Name = "CodeText"
+    initialMessage.Size = UDim2.new(1, -10, 0, 30)
+    initialMessage.Position = UDim2.new(0, 5, 0, 10)
+    initialMessage.Text = "Select a script to view its code..."
+    initialMessage.TextColor3 = Color3.fromRGB(150, 150, 150)
+    initialMessage.TextSize = 14
+    initialMessage.Font = Enum.Font.Code
+    initialMessage.TextXAlignment = Enum.TextXAlignment.Left
+    initialMessage.TextYAlignment = Enum.TextYAlignment.Top
+    initialMessage.BackgroundTransparency = 1
+    initialMessage.TextWrapped = false
+    initialMessage.Parent = CodeScroll
     
     return {
         MainFrame = MainFrame,
@@ -234,20 +234,136 @@ end
 
 function UIModule.ShowCodeViewer(codeViewerFrame, script)
     local codeScroll = codeViewerFrame.CodeScroll
-    local codeText = codeScroll.CodeText
     local codeTitle = codeViewerFrame.CodeTitle
     
+    -- Clear previous code display
+    for _, child in pairs(codeScroll:GetChildren()) do
+        if child:IsA("Frame") or (child:IsA("TextLabel") and child.Name ~= "CodeText") then
+            child:Destroy()
+        end
+    end
+    
+    -- Set title
     codeTitle.Text = script.Name
-    codeText.Text = script.Source
     
-    local textSize = game:GetService("TextService"):GetTextSize(
-        script.Source,
-        14,
-        Enum.Font.Code,
-        Vector2.new(codeScroll.AbsoluteSize.X - 20, 10000)
-    )
+    -- Format code with proper indentation and line numbers
+    local source = script.Source
+    local lines = {}
     
-    codeScroll.CanvasSize = UDim2.new(0, textSize.X + 10, 0, textSize.Y + 10)
+    -- Split code into lines
+    for line in string.gmatch(source, "[^\r\n]+") do
+        table.insert(lines, line)
+    end
+    
+    -- Create container for the formatted code
+    local codeContainer = Instance.new("Frame")
+    codeContainer.Name = "CodeContainer"
+    codeContainer.Size = UDim2.new(1, -10, 0, #lines * 20 + 10)
+    codeContainer.BackgroundTransparency = 1
+    codeContainer.Parent = codeScroll
+    
+    -- Colors for syntax highlighting
+    local colors = {
+        keywords = Color3.fromRGB(86, 156, 214),    -- Blue
+        strings = Color3.fromRGB(206, 145, 120),    -- Orange-brown
+        comments = Color3.fromRGB(87, 166, 74),     -- Green
+        functions = Color3.fromRGB(220, 220, 170),  -- Yellow
+        numbers = Color3.fromRGB(181, 206, 168),    -- Light green
+        operators = Color3.fromRGB(180, 180, 180),  -- Light gray
+        default = Color3.fromRGB(220, 220, 220)     -- White-ish
+    }
+    
+    -- Keywords for highlighting
+    local keywords = {
+        ["and"] = true, ["break"] = true, ["do"] = true, ["else"] = true,
+        ["elseif"] = true, ["end"] = true, ["false"] = true, ["for"] = true,
+        ["function"] = true, ["if"] = true, ["in"] = true, ["local"] = true,
+        ["nil"] = true, ["not"] = true, ["or"] = true, ["repeat"] = true,
+        ["return"] = true, ["then"] = true, ["true"] = true, ["until"] = true,
+        ["while"] = true, ["continue"] = true
+    }
+    
+    -- Create line number background
+    local lineNumbersBg = Instance.new("Frame")
+    lineNumbersBg.Name = "LineNumbersBg"
+    lineNumbersBg.Size = UDim2.new(0, 40, 1, 0)
+    lineNumbersBg.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    lineNumbersBg.BorderSizePixel = 0
+    lineNumbersBg.Parent = codeContainer
+    
+    -- Create line numbers
+    for i, _ in ipairs(lines) do
+        local lineNumber = Instance.new("TextLabel")
+        lineNumber.Name = "LineNumber_" .. i
+        lineNumber.Size = UDim2.new(1, -10, 0, 20)
+        lineNumber.Position = UDim2.new(0, 5, 0, (i-1) * 20)
+        lineNumber.Text = tostring(i)
+        lineNumber.TextColor3 = Color3.fromRGB(150, 150, 150)
+        lineNumber.TextSize = 14
+        lineNumber.Font = Enum.Font.Code
+        lineNumber.TextXAlignment = Enum.TextXAlignment.Right
+        lineNumber.BackgroundTransparency = 1
+        lineNumber.Parent = lineNumbersBg
+    end
+    
+    -- Create code lines with basic syntax highlighting
+    for i, line in ipairs(lines) do
+        -- Create line background (for alternating colors)
+        local lineBg = Instance.new("Frame")
+        lineBg.Name = "LineBg_" .. i
+        lineBg.Size = UDim2.new(1, -40, 0, 20)
+        lineBg.Position = UDim2.new(0, 40, 0, (i-1) * 20)
+        lineBg.BackgroundColor3 = i % 2 == 0 and Color3.fromRGB(35, 35, 35) or Color3.fromRGB(30, 30, 30)
+        lineBg.BorderSizePixel = 0
+        lineBg.Parent = codeContainer
+        
+        -- Create basic text label for the line
+        local codeLine = Instance.new("TextLabel")
+        codeLine.Name = "Line_" .. i
+        codeLine.Size = UDim2.new(1, -10, 1, 0)
+        codeLine.Position = UDim2.new(0, 5, 0, 0)
+        codeLine.Text = line
+        codeLine.TextColor3 = colors.default
+        codeLine.TextSize = 14
+        codeLine.Font = Enum.Font.Code
+        codeLine.TextXAlignment = Enum.TextXAlignment.Left
+        codeLine.BackgroundTransparency = 1
+        codeLine.Parent = lineBg
+        
+        -- Apply very basic syntax highlighting
+        -- Comments
+        if string.match(line, "^%s*%-%-") then
+            codeLine.TextColor3 = colors.comments
+        else
+            -- Check for keywords
+            for word in string.gmatch(line, "[%a_][%w_]*") do
+                if keywords[word] then
+                    -- This is a simplification since we can't do partial coloring in a single TextLabel
+                    -- In a real implementation, you'd break this into multiple TextLabels
+                    if string.match(line, "^%s*" .. word .. "%s") or 
+                       string.match(line, "[^%w_]" .. word .. "[^%w_]") then
+                        codeLine.TextColor3 = colors.keywords
+                        break
+                    end
+                end
+            end
+            
+            -- Check for strings (simplification)
+            if string.match(line, '".-"') or string.match(line, "'.-'") then
+                if not string.match(line, "^%s*%-%-") then -- not a comment
+                    codeLine.TextColor3 = colors.strings
+                end
+            end
+            
+            -- Check for function definitions
+            if string.match(line, "function%s+[%w_:%.]+%s*%(") then
+                codeLine.TextColor3 = colors.functions
+            end
+        end
+    end
+    
+    -- Update canvas size
+    codeScroll.CanvasSize = UDim2.new(0, 0, 0, #lines * 20 + 10)
 end
 
 return UIModule
