@@ -1,137 +1,251 @@
-local UI = {}
-local TweenService = game:GetService("TweenService")
-local Players = game:GetService("Players")
-local Player = Players.LocalPlayer
-local UIS = game:GetService("UserInputService")
+-- UIModule.lua
 
-function UI:Init(scanCallback)
-    local ScreenGui = Instance.new("ScreenGui", Player:FindFirstChildOfClass("PlayerGui"))
+local UIModule = {}
+
+function UIModule.CreateUI()
+    local ScreenGui = Instance.new("ScreenGui")
+    ScreenGui.Name = "KickDetectorUI"
+    ScreenGui.Parent = game.CoreGui
     
-    -- Main Frame
-    local Frame = Instance.new("Frame", ScreenGui)
-    Frame.Size = UDim2.new(0.35, 0, 0.5, 0)
-    Frame.Position = UDim2.new(0.325, 0, 0.25, 0)
-    Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-    Frame.BackgroundTransparency = 0.2
-    Frame.BorderSizePixel = 0
-    Frame.ClipsDescendants = true
-
-    -- Drop Shadow Effect
-    local Shadow = Instance.new("ImageLabel", Frame)
-    Shadow.Size = UDim2.new(1, 10, 1, 10)
-    Shadow.Position = UDim2.new(0, -5, 0, -5)
-    Shadow.Image = "rbxassetid://1316045217"
-    Shadow.ImageTransparency = 0.5
-    Shadow.BackgroundTransparency = 1
-
-    -- Title Bar
-    local Title = Instance.new("TextLabel", Frame)
-    Title.Size = UDim2.new(1, 0, 0, 40)
-    Title.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    Title.Text = "⚠️ Advanced Script Scanner"
-    Title.Font = Enum.Font.GothamBold
-    Title.TextSize = 18
-    Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-    Title.TextStrokeTransparency = 0.5
-
-    -- Close Button
-    local Close = Instance.new("TextButton", Frame)
-    Close.Size = UDim2.new(0, 40, 0, 40)
-    Close.Position = UDim2.new(1, -40, 0, 0)
-    Close.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-    Close.Text = "✖"
-    Close.Font = Enum.Font.GothamBold
-    Close.TextColor3 = Color3.fromRGB(255, 255, 255)
-
-    -- Close Function
-    Close.MouseButton1Click:Connect(function()
-        Frame:TweenPosition(UDim2.new(0.5, 0, -1, 0), "Out", "Sine", 0.5, true, function()
-            ScreenGui:Destroy()
-        end)
-    end)
-
-    -- Scan Button
-    local ScanButton = Instance.new("TextButton", Frame)
-    ScanButton.Size = UDim2.new(0.9, 0, 0, 40)
-    ScanButton.Position = UDim2.new(0.05, 0, 0, 50)
-    ScanButton.BackgroundColor3 = Color3.fromRGB(45, 130, 250)
-    ScanButton.Text = "🔍 Scan Now"
-    ScanButton.Font = Enum.Font.GothamBold
-    ScanButton.TextSize = 16
+    local MainFrame = Instance.new("Frame")
+    MainFrame.Name = "MainFrame"
+    MainFrame.Size = UDim2.new(0, 600, 0, 400)
+    MainFrame.Position = UDim2.new(0.5, -300, 0.5, -200)
+    MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+    MainFrame.BorderSizePixel = 0
+    MainFrame.Parent = ScreenGui
+    
+    local UICorner = Instance.new("UICorner")
+    UICorner.CornerRadius = UDim.new(0, 8)
+    UICorner.Parent = MainFrame
+    
+    local TitleBar = Instance.new("Frame")
+    TitleBar.Name = "TitleBar"
+    TitleBar.Size = UDim2.new(1, 0, 0, 40)
+    TitleBar.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+    TitleBar.BorderSizePixel = 0
+    TitleBar.Parent = MainFrame
+    
+    local UICornerTitle = Instance.new("UICorner")
+    UICornerTitle.CornerRadius = UDim.new(0, 8)
+    UICornerTitle.Parent = TitleBar
+    
+    local TitleText = Instance.new("TextLabel")
+    TitleText.Name = "TitleText"
+    TitleText.Size = UDim2.new(1, -40, 1, 0)
+    TitleText.Position = UDim2.new(0, 15, 0, 0)
+    TitleText.Text = "Kick Detector"
+    TitleText.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TitleText.TextSize = 18
+    TitleText.Font = Enum.Font.GothamBold
+    TitleText.TextXAlignment = Enum.TextXAlignment.Left
+    TitleText.BackgroundTransparency = 1
+    TitleText.Parent = TitleBar
+    
+    local CloseButton = Instance.new("TextButton")
+    CloseButton.Name = "CloseButton"
+    CloseButton.Size = UDim2.new(0, 24, 0, 24)
+    CloseButton.Position = UDim2.new(1, -30, 0, 8)
+    CloseButton.Text = "X"
+    CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    CloseButton.TextSize = 14
+    CloseButton.Font = Enum.Font.GothamBold
+    CloseButton.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
+    CloseButton.Parent = TitleBar
+    
+    local UICornerClose = Instance.new("UICorner")
+    UICornerClose.CornerRadius = UDim.new(0, 4)
+    UICornerClose.Parent = CloseButton
+    
+    local ScanButton = Instance.new("TextButton")
+    ScanButton.Name = "ScanButton"
+    ScanButton.Size = UDim2.new(0, 120, 0, 35)
+    ScanButton.Position = UDim2.new(0, 15, 1, -50)
+    ScanButton.Text = "Scan"
     ScanButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-
-    -- Hover Animation
-    ScanButton.MouseEnter:Connect(function()
-        TweenService:Create(ScanButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(65, 150, 255)}):Play()
-    end)
-    ScanButton.MouseLeave:Connect(function()
-        TweenService:Create(ScanButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(45, 130, 250)}):Play()
-    end)
-
-    -- List Frame
-    local List = Instance.new("ScrollingFrame", Frame)
-    List.Size = UDim2.new(0.9, 0, 0.7, 0)
-    List.Position = UDim2.new(0.05, 0, 0, 100)
-    List.BackgroundTransparency = 1
-    List.AutomaticCanvasSize = Enum.AutomaticSize.Y
-    List.CanvasSize = UDim2.new(0, 0, 1, 0)
-    List.ScrollBarThickness = 4
-
-    local UIListLayout = Instance.new("UIListLayout", List)
+    ScanButton.TextSize = 16
+    ScanButton.Font = Enum.Font.GothamSemibold
+    ScanButton.BackgroundColor3 = Color3.fromRGB(65, 105, 225)
+    ScanButton.Parent = MainFrame
+    
+    local UICornerScan = Instance.new("UICorner")
+    UICornerScan.CornerRadius = UDim.new(0, 6)
+    UICornerScan.Parent = ScanButton
+    
+    local ResultsFrame = Instance.new("ScrollingFrame")
+    ResultsFrame.Name = "ResultsFrame"
+    ResultsFrame.Size = UDim2.new(0.4, -20, 1, -100)
+    ResultsFrame.Position = UDim2.new(0, 10, 0, 50)
+    ResultsFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+    ResultsFrame.BorderSizePixel = 0
+    ResultsFrame.ScrollBarThickness = 6
+    ResultsFrame.ScrollBarImageColor3 = Color3.fromRGB(70, 70, 75)
+    ResultsFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+    ResultsFrame.Parent = MainFrame
+    
+    local UICornerResults = Instance.new("UICorner")
+    UICornerResults.CornerRadius = UDim.new(0, 6)
+    UICornerResults.Parent = ResultsFrame
+    
+    local UIListLayout = Instance.new("UIListLayout")
     UIListLayout.Padding = UDim.new(0, 5)
     UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-
-    -- Scan Button Click Function
-    ScanButton.MouseButton1Click:Connect(function()
-        scanCallback()
-    end)
-
-    -- Dragging Support
-    local dragging, dragInput, dragStart, startPos
-
-    Title.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = true
-            dragStart = input.Position
-            startPos = Frame.Position
-            input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then
-                    dragging = false
-                end
-            end)
-        end
-    end)
-
-    Title.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement then
-            dragInput = input
-        end
-    end)
-
-    UIS.InputChanged:Connect(function(input)
-        if input == dragInput and dragging then
-            local delta = input.Position - dragStart
-            Frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-        end
-    end)
-
-    UI.Frame, UI.List = Frame, List
+    UIListLayout.Parent = ResultsFrame
+    
+    local UIPadding = Instance.new("UIPadding")
+    UIPadding.PaddingTop = UDim.new(0, 5)
+    UIPadding.PaddingLeft = UDim.new(0, 5)
+    UIPadding.PaddingRight = UDim.new(0, 5)
+    UIPadding.PaddingBottom = UDim.new(0, 5)
+    UIPadding.Parent = ResultsFrame
+    
+    local CodeViewerFrame = Instance.new("Frame")
+    CodeViewerFrame.Name = "CodeViewerFrame"
+    CodeViewerFrame.Size = UDim2.new(0.6, -10, 1, -100)
+    CodeViewerFrame.Position = UDim2.new(0.4, 0, 0, 50)
+    CodeViewerFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+    CodeViewerFrame.BorderSizePixel = 0
+    CodeViewerFrame.Parent = MainFrame
+    
+    local UICornerCode = Instance.new("UICorner")
+    UICornerCode.CornerRadius = UDim.new(0, 6)
+    UICornerCode.Parent = CodeViewerFrame
+    
+    local CodeTitle = Instance.new("TextLabel")
+    CodeTitle.Name = "CodeTitle"
+    CodeTitle.Size = UDim2.new(1, -20, 0, 30)
+    CodeTitle.Position = UDim2.new(0, 10, 0, 5)
+    CodeTitle.Text = "Code Viewer"
+    CodeTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+    CodeTitle.TextSize = 16
+    CodeTitle.Font = Enum.Font.GothamSemibold
+    CodeTitle.TextXAlignment = Enum.TextXAlignment.Left
+    CodeTitle.BackgroundTransparency = 1
+    CodeTitle.Parent = CodeViewerFrame
+    
+    local CodeScroll = Instance.new("ScrollingFrame")
+    CodeScroll.Name = "CodeScroll"
+    CodeScroll.Size = UDim2.new(1, -20, 1, -45)
+    CodeScroll.Position = UDim2.new(0, 10, 0, 35)
+    CodeScroll.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+    CodeScroll.BorderSizePixel = 0
+    CodeScroll.ScrollBarThickness = 6
+    CodeScroll.ScrollBarImageColor3 = Color3.fromRGB(70, 70, 75)
+    CodeScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+    CodeScroll.Parent = CodeViewerFrame
+    
+    local UICornerScroll = Instance.new("UICorner")
+    UICornerScroll.CornerRadius = UDim.new(0, 4)
+    UICornerScroll.Parent = CodeScroll
+    
+    local CodeText = Instance.new("TextLabel")
+    CodeText.Name = "CodeText"
+    CodeText.Size = UDim2.new(1, -10, 1, 0)
+    CodeText.Position = UDim2.new(0, 5, 0, 0)
+    CodeText.Text = "Select a script to view its code..."
+    CodeText.TextColor3 = Color3.fromRGB(200, 200, 200)
+    CodeText.TextSize = 14
+    CodeText.Font = Enum.Font.Code
+    CodeText.TextXAlignment = Enum.TextXAlignment.Left
+    CodeText.TextYAlignment = Enum.TextYAlignment.Top
+    CodeText.BackgroundTransparency = 1
+    CodeText.TextWrapped = false
+    CodeText.Parent = CodeScroll
+    
+    return {
+        MainFrame = MainFrame,
+        ResultsFrame = ResultsFrame,
+        CodeViewerFrame = CodeViewerFrame,
+        ScanButton = ScanButton,
+        CloseButton = CloseButton
+    }
 end
 
-function UI.AddResult(scriptPath)
-    local Result = Instance.new("TextLabel", UI.List)
-    Result.Size = UDim2.new(1, -10, 0, 30)
-    Result.Position = UDim2.new(0, 5, 0, 0)
-    Result.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-    Result.BackgroundTransparency = 0.2
-    Result.Font = Enum.Font.Gotham
-    Result.Text = "⚠️ " .. scriptPath
-    Result.TextColor3 = Color3.fromRGB(255, 85, 85)
-    Result.TextSize = 14
-    Result.TextXAlignment = Enum.TextXAlignment.Left
-
-    local Fade = TweenService:Create(Result, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 0.1})
-    Fade:Play()
+function UIModule.ClearResults(resultsFrame)
+    for _, child in pairs(resultsFrame:GetChildren()) do
+        if child:IsA("Frame") then
+            child:Destroy()
+        end
+    end
 end
 
-return UI
+function UIModule.DisplayResults(resultsFrame, results, onViewClick)
+    for i, result in ipairs(results) do
+        local resultItem = Instance.new("Frame")
+        resultItem.Name = "ResultItem"
+        resultItem.Size = UDim2.new(1, 0, 0, 60)
+        resultItem.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
+        resultItem.LayoutOrder = i
+        resultItem.Parent = resultsFrame
+        
+        local UICornerItem = Instance.new("UICorner")
+        UICornerItem.CornerRadius = UDim.new(0, 4)
+        UICornerItem.Parent = resultItem
+        
+        local ScriptName = Instance.new("TextLabel")
+        ScriptName.Name = "ScriptName"
+        ScriptName.Size = UDim2.new(1, -10, 0, 20)
+        ScriptName.Position = UDim2.new(0, 7, 0, 5)
+        ScriptName.Text = result.Name
+        ScriptName.TextColor3 = Color3.fromRGB(255, 255, 255)
+        ScriptName.TextSize = 14
+        ScriptName.Font = Enum.Font.GothamBold
+        ScriptName.TextXAlignment = Enum.TextXAlignment.Left
+        ScriptName.BackgroundTransparency = 1
+        ScriptName.Parent = resultItem
+        
+        local ScriptPath = Instance.new("TextLabel")
+        ScriptPath.Name = "ScriptPath"
+        ScriptPath.Size = UDim2.new(1, -80, 0, 20)
+        ScriptPath.Position = UDim2.new(0, 7, 0, 25)
+        ScriptPath.Text = result.Path
+        ScriptPath.TextColor3 = Color3.fromRGB(200, 200, 200)
+        ScriptPath.TextSize = 12
+        ScriptPath.Font = Enum.Font.Gotham
+        ScriptPath.TextXAlignment = Enum.TextXAlignment.Left
+        ScriptPath.BackgroundTransparency = 1
+        ScriptPath.TextTruncate = Enum.TextTruncate.AtEnd
+        ScriptPath.Parent = resultItem
+        
+        local ViewButton = Instance.new("TextButton")
+        ViewButton.Name = "ViewButton"
+        ViewButton.Size = UDim2.new(0, 70, 0, 25)
+        ViewButton.Position = UDim2.new(1, -80, 0, 20)
+        ViewButton.Text = "View"
+        ViewButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+        ViewButton.TextSize = 14
+        ViewButton.Font = Enum.Font.GothamSemibold
+        ViewButton.BackgroundColor3 = Color3.fromRGB(65, 105, 225)
+        ViewButton.Parent = resultItem
+        
+        local UICornerView = Instance.new("UICorner")
+        UICornerView.CornerRadius = UDim.new(0, 4)
+        UICornerView.Parent = ViewButton
+        
+        ViewButton.MouseButton1Click:Connect(function()
+            onViewClick(result)
+        end)
+    end
+    
+    resultsFrame.CanvasSize = UDim2.new(0, 0, 0, #results * 65)
+end
+
+function UIModule.ShowCodeViewer(codeViewerFrame, script)
+    local codeScroll = codeViewerFrame.CodeScroll
+    local codeText = codeScroll.CodeText
+    local codeTitle = codeViewerFrame.CodeTitle
+    
+    codeTitle.Text = script.Name
+    codeText.Text = script.Source
+    
+    local textSize = game:GetService("TextService"):GetTextSize(
+        script.Source,
+        14,
+        Enum.Font.Code,
+        Vector2.new(codeScroll.AbsoluteSize.X - 20, 10000)
+    )
+    
+    codeScroll.CanvasSize = UDim2.new(0, textSize.X + 10, 0, textSize.Y + 10)
+end
+
+return UIModule
