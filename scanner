@@ -7,11 +7,24 @@ function ScannerModule.ScanForKick()
     
     local function processInstance(instance, path)
         if instance:IsA("LocalScript") then
-            local success, source = pcall(function()
-                return decompile(instance)
+            local success, source
+            
+            success, source = pcall(function()
+                -- Use the executor's decompiler
+                -- Different executors might use different function names
+                if decompile then
+                    return decompile(instance)
+                elseif syn and syn.decompile then
+                    return syn.decompile(instance)
+                elseif getscriptbytecode then
+                    return getscriptbytecode(instance)
+                else
+                    -- Fallback to getting the script source directly if possible
+                    return instance.Source
+                end
             end)
             
-            if success and source and string.find(source, "Kick") then
+            if success and source and type(source) == "string" and string.find(source, "Kick") then
                 table.insert(results, {
                     Name = instance.Name,
                     Path = path,
@@ -21,16 +34,30 @@ function ScannerModule.ScanForKick()
             end
         end
         
-        for _, child in pairs(instance:GetChildren()) do
-            local newPath = path .. "/" .. child.Name
-            processInstance(child, newPath)
-        end
+        -- Handle errors during child processing
+        pcall(function()
+            for _, child in pairs(instance:GetChildren()) do
+                local newPath = path .. "/" .. child.Name
+                processInstance(child, newPath)
+            end
+        end)
     end
     
-    for _, service in pairs({"ReplicatedStorage", "ReplicatedFirst", "StarterGui", "StarterPack", "StarterPlayer"}) do
-        local serviceInstance = game:GetService(service)
-        processInstance(serviceInstance, service)
+    -- Wrap each service scan in pcall to prevent script termination on error
+    for _, service in pairs({"ReplicatedStorage", "ReplicatedFirst", "StarterGui", "StarterPack", "StarterPlayer", "Workspace", "Players"}) do
+        pcall(function()
+            local serviceInstance = game:GetService(service)
+            processInstance(serviceInstance, service)
+        end)
     end
+    
+    -- Check current player's PlayerGui as well
+    pcall(function()
+        local player = game.Players.LocalPlayer
+        if player and player:FindFirstChild("PlayerGui") then
+            processInstance(player.PlayerGui, "PlayerGui")
+        end
+    end)
     
     return results
 end
