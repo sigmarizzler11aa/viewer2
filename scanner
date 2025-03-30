@@ -4,7 +4,7 @@ local UI
 function ScannerModule.Initialize(UIModule)
     UI = UIModule
     
-    -- Connect the scan button
+    -- Connect the scan button with proper error handling
     UI.ScanButton.MouseButton1Click:Connect(function()
         local searchTerm = UI.SearchBox.Text
         if searchTerm == "" then
@@ -30,20 +30,39 @@ function ScannerModule.GetPath(instance)
 end
 
 function ScannerModule.ScanInstance(instance, searchTerm, results)
-    if instance:IsA("LocalScript") then
-        local success, source = pcall(function()
-            return decompile(instance)
-        end)
-        
-        if success and source and string.find(source, searchTerm, 1, true) then
-            local path = ScannerModule.GetPath(instance)
-            table.insert(results, {path = path, name = instance.Name})
-            UI.AddResult(path, instance.Name)
+    -- Add a pcall around the entire function to prevent errors from breaking the scan
+    local success, err = pcall(function()
+        if instance:IsA("LocalScript") then
+            local success, source = pcall(function()
+                -- Make sure decompile function exists and works
+                if typeof(decompile) == "function" then
+                    return decompile(instance)
+                else
+                    -- Fall back to other methods if decompile isn't available
+                    if typeof(getsource) == "function" then
+                        return getsource(instance)
+                    elseif typeof(getscriptbytecode) == "function" then
+                        return getscriptbytecode(instance)
+                    else
+                        return instance.Source
+                    end
+                end
+            end)
+            
+            if success and source and typeof(source) == "string" and string.find(source, searchTerm, 1, true) then
+                local path = ScannerModule.GetPath(instance)
+                table.insert(results, {path = path, name = instance.Name})
+                UI.AddResult(path, instance.Name)
+            end
         end
-    end
+        
+        for _, child in ipairs(instance:GetChildren()) do
+            ScannerModule.ScanInstance(child, searchTerm, results)
+        end
+    end)
     
-    for _, child in ipairs(instance:GetChildren()) do
-        ScannerModule.ScanInstance(child, searchTerm, results)
+    if not success then
+        print("Error scanning: " .. tostring(err))
     end
 end
 
@@ -58,7 +77,8 @@ function ScannerModule.StartScan(searchTerm)
     UI.ScanButton.Text = "SCANNING..."
     UI.ScanButton.AutoButtonColor = false
     
-    task.spawn(function()
+    -- Use coroutine.wrap instead of task.spawn for better compatibility
+    coroutine.wrap(function()
         -- Add a small pulsing effect during scanning
         local tweenInfo = TweenInfo.new(0.8, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true)
         local tween = game:GetService("TweenService"):Create(
@@ -68,7 +88,13 @@ function ScannerModule.StartScan(searchTerm)
         )
         tween:Play()
         
-        ScannerModule.ScanInstance(game, searchTerm, results)
+        -- Delay slightly to ensure UI updates before starting the scan
+        wait(0.1)
+        
+        -- Wrap in pcall for extra safety
+        local success, err = pcall(function()
+            ScannerModule.ScanInstance(game, searchTerm, results)
+        end)
         
         -- Restore button state
         UI.ScanButton.BackgroundColor3 = originalColor
@@ -77,14 +103,24 @@ function ScannerModule.StartScan(searchTerm)
         tween:Cancel()
         UI.BlurEffect.Size = 10
         
-        if #results == 0 then
+        if not success then
+            UI.UpdateStatus("Error during scan: " .. tostring(err))
+        elseif #results == 0 then
             UI.UpdateStatus("Scan complete. No matches found for '" .. searchTerm .. "'.")
         else
             UI.UpdateStatus("Found " .. #results .. " script(s) containing '" .. searchTerm .. "'.")
         end
-    end)
+    end)()
     
     return results
+end
+
+-- Debug function to test if scanning works
+function ScannerModule.TestScan()
+    print("Testing scan...")
+    UI.UpdateStatus("Testing scan system...")
+    UI.AddResult("Test/Path/Script", "TestScript")
+    return true
 end
 
 return ScannerModule
