@@ -1,0 +1,56 @@
+local ScannerModule = {}
+local UI
+
+function ScannerModule.Initialize(UIModule)
+    UI = UIModule
+end
+
+function ScannerModule.GetPath(instance)
+    local path = instance.Name
+    local current = instance.Parent
+    
+    while current and current ~= game do
+        path = current.Name .. "/" .. path
+        current = current.Parent
+    end
+    
+    return path
+end
+
+function ScannerModule.ScanInstance(instance, searchTerm, results)
+    if instance:IsA("LocalScript") then
+        local success, source = pcall(function()
+            return decompile(instance)
+        end)
+        
+        if success and source and string.find(source, searchTerm, 1, true) then
+            local path = ScannerModule.GetPath(instance)
+            table.insert(results, {path = path, name = instance.Name})
+            UI.AddResult(path, instance.Name)
+        end
+    end
+    
+    for _, child in ipairs(instance:GetChildren()) do
+        ScannerModule.ScanInstance(child, searchTerm, results)
+    end
+end
+
+function ScannerModule.StartScan(searchTerm)
+    local results = {}
+    
+    UI.UpdateStatus("Scanning for '" .. searchTerm .. "'...")
+    
+    task.spawn(function()
+        ScannerModule.ScanInstance(game, searchTerm, results)
+        
+        if #results == 0 then
+            UI.UpdateStatus("Scan complete. No matches found.")
+        else
+            UI.UpdateStatus("Scan complete. Found " .. #results .. " script(s) containing '" .. searchTerm .. "'.")
+        end
+    end)
+    
+    return results
+end
+
+return ScannerModule
