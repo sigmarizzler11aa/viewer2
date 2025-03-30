@@ -1,21 +1,82 @@
 local UI = {}
+local TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")
-local player = Players.LocalPlayer
+local Player = Players.LocalPlayer
 
 function UI:Init()
-    local ScreenGui = Instance.new("ScreenGui", player.PlayerGui)
-    local Frame = Instance.new("Frame", ScreenGui)
-    Frame.Size, Frame.Position, Frame.BackgroundTransparency = UDim2.new(0.3, 0, 0.4, 0), UDim2.new(0.35, 0, 0.3, 0)
-
-    local List = Instance.new("ScrollingFrame", Frame)
-    List.Size, List.BackgroundTransparency, List.AutomaticCanvasSize = UDim2.new(1, 0, 1, 0), 1, Enum.AutomaticSize.Y
+    local ScreenGui = Instance.new("ScreenGui", Player:FindFirstChildOfClass("PlayerGui"))
     
+    local Frame = Instance.new("Frame", ScreenGui)
+    Frame.Size = UDim2.new(0.35, 0, 0.4, 0)
+    Frame.Position = UDim2.new(0.325, 0, 0.3, 0)
+    Frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    Frame.BackgroundTransparency = 0.2
+    Frame.BorderSizePixel = 0
+    Frame.ClipsDescendants = true
+    
+    -- Drop Shadow
+    local Shadow = Instance.new("ImageLabel", Frame)
+    Shadow.Size = UDim2.new(1, 10, 1, 10)
+    Shadow.Position = UDim2.new(0, -5, 0, -5)
+    Shadow.Image = "rbxassetid://1316045217"
+    Shadow.ImageTransparency = 0.5
+    Shadow.BackgroundTransparency = 1
+
+    -- Title Bar
+    local Title = Instance.new("TextLabel", Frame)
+    Title.Size = UDim2.new(1, 0, 0, 30)
+    Title.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    Title.Text = "⚠️ Script Detector"
+    Title.Font = Enum.Font.GothamBold
+    Title.TextSize = 16
+    Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+    
+    -- Close Button
+    local Close = Instance.new("TextButton", Frame)
+    Close.Size = UDim2.new(0, 30, 0, 30)
+    Close.Position = UDim2.new(1, -30, 0, 0)
+    Close.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+    Close.Text = "✖"
+    Close.Font = Enum.Font.GothamBold
+    Close.TextColor3 = Color3.fromRGB(255, 255, 255)
+
+    -- Close Function
+    Close.MouseButton1Click:Connect(function()
+        Frame:TweenPosition(UDim2.new(0.5, 0, -1, 0), "Out", "Sine", 0.5, true, function()
+            ScreenGui:Destroy()
+        end)
+    end)
+
+    -- List Frame
+    local List = Instance.new("ScrollingFrame", Frame)
+    List.Size = UDim2.new(1, 0, 1, -30)
+    List.Position = UDim2.new(0, 0, 0, 30)
+    List.BackgroundTransparency = 1
+    List.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    List.CanvasSize = UDim2.new(0, 0, 1, 0)
+    List.ScrollBarThickness = 4
+
+    local UIListLayout = Instance.new("UIListLayout", List)
+    UIListLayout.Padding = UDim.new(0, 5)
+    UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+
     UI.Frame, UI.List = Frame, List
 end
 
 function UI.AddResult(scriptPath)
-    local Text = Instance.new("TextLabel", UI.List)
-    Text.Size, Text.Text, Text.TextColor3 = UDim2.new(1, 0, 0, 25), scriptPath, Color3.new(1, 0, 0)
+    local Result = Instance.new("TextLabel", UI.List)
+    Result.Size = UDim2.new(1, -10, 0, 25)
+    Result.Position = UDim2.new(0, 5, 0, 0)
+    Result.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    Result.BackgroundTransparency = 0.3
+    Result.Font = Enum.Font.Gotham
+    Result.Text = "⚠️ " .. scriptPath
+    Result.TextColor3 = Color3.fromRGB(255, 85, 85)
+    Result.TextSize = 14
+    Result.TextXAlignment = Enum.TextXAlignment.Left
+
+    local Fade = TweenService:Create(Result, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 0.1})
+    Fade:Play()
 end
 
 return UI
