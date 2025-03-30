@@ -2,86 +2,166 @@ local UIModule = {}
 
 function UIModule.Initialize()
     local ScreenGui = Instance.new("ScreenGui")
+    local BlurEffect = Instance.new("BlurEffect")
     local MainFrame = Instance.new("Frame")
+    local UICorner = Instance.new("UICorner")
     local TitleBar = Instance.new("Frame")
+    local UICornerTitle = Instance.new("UICorner")
     local Title = Instance.new("TextLabel")
     local CloseButton = Instance.new("TextButton")
     local ResultsFrame = Instance.new("ScrollingFrame")
     local UIListLayout = Instance.new("UIListLayout")
+    local UIPadding = Instance.new("UIPadding")
     local StatusLabel = Instance.new("TextLabel")
+    local ScanButton = Instance.new("TextButton")
+    local UICornerButton = Instance.new("UICorner")
+    local SearchBox = Instance.new("TextBox")
+    local UICornerSearch = Instance.new("UICorner")
     
+    -- Blur effect
+    BlurEffect.Name = "KickFinderBlur"
+    BlurEffect.Parent = game:GetService("Lighting")
+    BlurEffect.Size = 10
+    
+    -- Main GUI setup
     ScreenGui.Name = "KickFinderGUI"
     ScreenGui.Parent = game:GetService("CoreGui")
     ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     
     MainFrame.Name = "MainFrame"
     MainFrame.Parent = ScreenGui
-    MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+    MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
     MainFrame.BorderSizePixel = 0
-    MainFrame.Position = UDim2.new(0.5, -200, 0.5, -150)
-    MainFrame.Size = UDim2.new(0, 400, 0, 300)
+    MainFrame.Position = UDim2.new(0.5, -225, 0.5, -175)
+    MainFrame.Size = UDim2.new(0, 450, 0, 350)
     MainFrame.Active = true
     MainFrame.Draggable = true
     
+    UICorner.Parent = MainFrame
+    UICorner.CornerRadius = UDim.new(0, 10)
+    
+    -- Title Bar
     TitleBar.Name = "TitleBar"
     TitleBar.Parent = MainFrame
-    TitleBar.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
+    TitleBar.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
     TitleBar.BorderSizePixel = 0
-    TitleBar.Size = UDim2.new(1, 0, 0, 30)
+    TitleBar.Size = UDim2.new(1, 0, 0, 40)
+    
+    UICornerTitle.Parent = TitleBar
+    UICornerTitle.CornerRadius = UDim.new(0, 10)
     
     Title.Name = "Title"
     Title.Parent = TitleBar
     Title.BackgroundTransparency = 1
-    Title.Position = UDim2.new(0, 10, 0, 0)
+    Title.Position = UDim2.new(0, 15, 0, 0)
     Title.Size = UDim2.new(1, -40, 1, 0)
     Title.Font = Enum.Font.GothamBold
-    Title.Text = "Kick Finder"
-    Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-    Title.TextSize = 16
+    Title.Text = "KICK FINDER"
+    Title.TextColor3 = Color3.fromRGB(255, 100, 100)
+    Title.TextSize = 18
     Title.TextXAlignment = Enum.TextXAlignment.Left
     
     CloseButton.Name = "CloseButton"
     CloseButton.Parent = TitleBar
     CloseButton.BackgroundTransparency = 1
-    CloseButton.Position = UDim2.new(1, -30, 0, 0)
-    CloseButton.Size = UDim2.new(0, 30, 1, 0)
+    CloseButton.Position = UDim2.new(1, -40, 0, 0)
+    CloseButton.Size = UDim2.new(0, 40, 1, 0)
     CloseButton.Font = Enum.Font.GothamBold
-    CloseButton.Text = "X"
+    CloseButton.Text = "×"
     CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    CloseButton.TextSize = 18
+    CloseButton.TextSize = 24
     
+    -- Search Box
+    SearchBox.Name = "SearchBox"
+    SearchBox.Parent = MainFrame
+    SearchBox.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+    SearchBox.BorderSizePixel = 0
+    SearchBox.Position = UDim2.new(0, 15, 0, 50)
+    SearchBox.Size = UDim2.new(1, -115, 0, 35)
+    SearchBox.Font = Enum.Font.Gotham
+    SearchBox.PlaceholderText = "Enter search term (default: Kick)"
+    SearchBox.Text = "Kick"
+    SearchBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    SearchBox.TextSize = 14
+    SearchBox.ClearTextOnFocus = false
+    
+    UICornerSearch.Parent = SearchBox
+    UICornerSearch.CornerRadius = UDim.new(0, 6)
+    
+    -- Scan Button
+    ScanButton.Name = "ScanButton"
+    ScanButton.Parent = MainFrame
+    ScanButton.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
+    ScanButton.BorderSizePixel = 0
+    ScanButton.Position = UDim2.new(1, -90, 0, 50)
+    ScanButton.Size = UDim2.new(0, 75, 0, 35)
+    ScanButton.Font = Enum.Font.GothamBold
+    ScanButton.Text = "SCAN"
+    ScanButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    ScanButton.TextSize = 14
+    ScanButton.AutoButtonColor = true
+    
+    UICornerButton.Parent = ScanButton
+    UICornerButton.CornerRadius = UDim.new(0, 6)
+    
+    -- Results Frame
     ResultsFrame.Name = "ResultsFrame"
     ResultsFrame.Parent = MainFrame
-    ResultsFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+    ResultsFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
     ResultsFrame.BorderSizePixel = 0
-    ResultsFrame.Position = UDim2.new(0, 10, 0, 40)
-    ResultsFrame.Size = UDim2.new(1, -20, 1, -50)
+    ResultsFrame.Position = UDim2.new(0, 15, 0, 95)
+    ResultsFrame.Size = UDim2.new(1, -30, 1, -130)
     ResultsFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
-    ResultsFrame.ScrollBarThickness = 6
+    ResultsFrame.ScrollBarThickness = 4
+    ResultsFrame.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 120)
     ResultsFrame.ScrollingDirection = Enum.ScrollingDirection.Y
+    
+    UICorner:Clone().Parent = ResultsFrame
     
     UIListLayout.Parent = ResultsFrame
     UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    UIListLayout.Padding = UDim.new(0, 5)
+    UIListLayout.Padding = UDim.new(0, 8)
     
+    UIPadding.Parent = ResultsFrame
+    UIPadding.PaddingLeft = UDim.new(0, 8)
+    UIPadding.PaddingRight = UDim.new(0, 8)
+    UIPadding.PaddingTop = UDim.new(0, 8)
+    UIPadding.PaddingBottom = UDim.new(0, 8)
+    
+    -- Status Label
     StatusLabel.Name = "StatusLabel"
     StatusLabel.Parent = MainFrame
     StatusLabel.BackgroundTransparency = 1
-    StatusLabel.Position = UDim2.new(0, 10, 1, -30)
-    StatusLabel.Size = UDim2.new(1, -20, 0, 20)
+    StatusLabel.Position = UDim2.new(0, 15, 1, -30)
+    StatusLabel.Size = UDim2.new(1, -30, 0, 20)
     StatusLabel.Font = Enum.Font.Gotham
     StatusLabel.Text = "Ready to scan..."
-    StatusLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+    StatusLabel.TextColor3 = Color3.fromRGB(180, 180, 200)
     StatusLabel.TextSize = 14
     StatusLabel.TextXAlignment = Enum.TextXAlignment.Left
     
+    -- Connect events
     CloseButton.MouseButton1Click:Connect(function()
+        BlurEffect:Destroy()
         ScreenGui:Destroy()
     end)
     
+    -- Store references
     UIModule.ScreenGui = ScreenGui
     UIModule.ResultsFrame = ResultsFrame
     UIModule.StatusLabel = StatusLabel
+    UIModule.SearchBox = SearchBox
+    UIModule.ScanButton = ScanButton
+    UIModule.BlurEffect = BlurEffect
+    
+    -- Add hover effects for buttons
+    ScanButton.MouseEnter:Connect(function()
+        game:GetService("TweenService"):Create(ScanButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(255, 90, 90)}):Play()
+    end)
+    
+    ScanButton.MouseLeave:Connect(function()
+        game:GetService("TweenService"):Create(ScanButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(255, 70, 70)}):Play()
+    end)
     
     return UIModule
 end
@@ -92,19 +172,25 @@ end
 
 function UIModule.AddResult(path, name)
     local ResultItem = Instance.new("Frame")
+    local UICorner = Instance.new("UICorner")
     local NameLabel = Instance.new("TextLabel")
     local PathLabel = Instance.new("TextLabel")
+    local CopyButton = Instance.new("TextButton")
+    local UICornerCopy = Instance.new("UICorner")
     
     ResultItem.Name = "ResultItem"
-    ResultItem.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
+    ResultItem.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
     ResultItem.BorderSizePixel = 0
-    ResultItem.Size = UDim2.new(1, -10, 0, 50)
+    ResultItem.Size = UDim2.new(1, 0, 0, 60)
+    
+    UICorner.Parent = ResultItem
+    UICorner.CornerRadius = UDim.new(0, 6)
     
     NameLabel.Name = "NameLabel"
     NameLabel.Parent = ResultItem
     NameLabel.BackgroundTransparency = 1
     NameLabel.Position = UDim2.new(0, 10, 0, 5)
-    NameLabel.Size = UDim2.new(1, -20, 0, 20)
+    NameLabel.Size = UDim2.new(1, -70, 0, 25)
     NameLabel.Font = Enum.Font.GothamBold
     NameLabel.Text = name
     NameLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
@@ -114,17 +200,59 @@ function UIModule.AddResult(path, name)
     PathLabel.Name = "PathLabel"
     PathLabel.Parent = ResultItem
     PathLabel.BackgroundTransparency = 1
-    PathLabel.Position = UDim2.new(0, 10, 0, 25)
-    PathLabel.Size = UDim2.new(1, -20, 0, 20)
+    PathLabel.Position = UDim2.new(0, 10, 0, 30)
+    PathLabel.Size = UDim2.new(1, -70, 0, 25)
     PathLabel.Font = Enum.Font.Gotham
     PathLabel.Text = path
-    PathLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+    PathLabel.TextColor3 = Color3.fromRGB(180, 180, 200)
     PathLabel.TextSize = 12
     PathLabel.TextXAlignment = Enum.TextXAlignment.Left
     
+    CopyButton = Instance.new("TextButton")
+    CopyButton.Name = "CopyButton"
+    CopyButton.Parent = ResultItem
+    CopyButton.BackgroundColor3 = Color3.fromRGB(50, 50, 70)
+    CopyButton.Position = UDim2.new(1, -60, 0.5, -15)
+    CopyButton.Size = UDim2.new(0, 50, 0, 30)
+    CopyButton.Font = Enum.Font.GothamSemibold
+    CopyButton.Text = "Copy"
+    CopyButton.TextColor3 = Color3.fromRGB(200, 200, 255)
+    CopyButton.TextSize = 12
+    CopyButton.AutoButtonColor = true
+    
+    UICornerCopy.Parent = CopyButton
+    UICornerCopy.CornerRadius = UDim.new(0, 4)
+    
+    -- Add hover and click effects for copy button
+    CopyButton.MouseEnter:Connect(function()
+        game:GetService("TweenService"):Create(CopyButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(60, 60, 90)}):Play()
+    end)
+    
+    CopyButton.MouseLeave:Connect(function()
+        game:GetService("TweenService"):Create(CopyButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(50, 50, 70)}):Play()
+    end)
+    
+    CopyButton.MouseButton1Click:Connect(function()
+        setclipboard(path)
+        CopyButton.Text = "Copied!"
+        game:GetService("TweenService"):Create(CopyButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(70, 120, 70)}):Play()
+        wait(1)
+        CopyButton.Text = "Copy"
+        game:GetService("TweenService"):Create(CopyButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(50, 50, 70)}):Play()
+    end)
+    
     ResultItem.Parent = UIModule.ResultsFrame
     
-    UIModule.ResultsFrame.CanvasSize = UDim2.new(0, 0, 0, UIModule.ResultsFrame.UIListLayout.AbsoluteContentSize.Y)
+    UIModule.ResultsFrame.CanvasSize = UDim2.new(0, 0, 0, UIModule.ResultsFrame.UIListLayout.AbsoluteContentSize.Y + 16)
+end
+
+function UIModule.ClearResults()
+    for _, child in pairs(UIModule.ResultsFrame:GetChildren()) do
+        if child:IsA("Frame") then
+            child:Destroy()
+        end
+    end
+    UIModule.ResultsFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
 end
 
 return UIModule
