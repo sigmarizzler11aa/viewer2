@@ -1,4 +1,8 @@
-local UIModule = {}
+-- Debug function to test if the viewer works properly
+function UIModule.TestViewer()
+    UIModule.CreateCodeViewer("Test Script", "Test/Path", "-- This is a test script\nlocal function test()\n    print(\"Hello world\")\nend\n\ntest()")
+    return true
+endlocal UIModule = {}
 
 function UIModule.Initialize()
     local ScreenGui = Instance.new("ScreenGui")
@@ -389,29 +393,48 @@ function UIModule.AddResult(path, name, source, instance)
         game:GetService("TweenService"):Create(ViewButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(50, 50, 70)}):Play()
     end)
     
-    -- Store source for viewing later
-    ResultItem.Source = source
+    -- Store instance information in ViewButton's tags
+    local instancePath = ""
+    if instance and typeof(instance) == "Instance" then
+        instancePath = instance:GetFullName()
+    end
+    ViewButton:SetAttribute("InstancePath", instancePath)
     
     ViewButton.MouseButton1Click:Connect(function()
-        -- If we don't have source yet, try to get it
+        -- Decompile on demand when clicked
         local scriptSource = source
+        
         if not scriptSource then
-            local success, result = pcall(function()
-                if typeof(decompile) == "function" and instance then
-                    return decompile(instance)
-                elseif typeof(getsource) == "function" and instance then
-                    return getsource(instance)
-                elseif typeof(getscriptbytecode) == "function" and instance then
-                    return getscriptbytecode(instance)
-                else
-                    return "Could not retrieve source code for this script."
-                end
-            end)
+            local scriptInstance = instance
             
-            if success and result then
-                scriptSource = result
+            -- If we don't have the instance directly, try to find it
+            if not scriptInstance then
+                local savedPath = ViewButton:GetAttribute("InstancePath")
+                if savedPath and savedPath ~= "" then
+                    scriptInstance = game:GetService("CoreGui"):FindFirstChild(savedPath, true)
+                end
+            end
+            
+            if scriptInstance then
+                local success, result = pcall(function()
+                    if typeof(decompile) == "function" then
+                        return decompile(scriptInstance)
+                    elseif typeof(getsource) == "function" then
+                        return getsource(scriptInstance)
+                    elseif typeof(getscriptbytecode) == "function" then
+                        return getscriptbytecode(scriptInstance)
+                    else
+                        return "Could not retrieve source code for this script."
+                    end
+                end)
+                
+                if success and result then
+                    scriptSource = result
+                else
+                    scriptSource = "Error retrieving source code: " .. tostring(result)
+                end
             else
-                scriptSource = "Error retrieving source code."
+                scriptSource = "Could not locate script instance."
             end
         end
         
