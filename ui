@@ -258,43 +258,6 @@ function UIModule.ShowCodeViewer(codeViewerFrame, script)
         table.insert(lines, line)
     end
     
-    -- Colors for syntax highlighting (Dex style)
-    local colors = {
-        keyword = Color3.fromRGB(248, 109, 124),    -- Red (if, then, local, etc)
-        string = Color3.fromRGB(173, 241, 149),     -- Green (strings)
-        comment = Color3.fromRGB(102, 102, 102),    -- Grey (comments)
-        number = Color3.fromRGB(255, 198, 0),       -- Yellow (numbers)
-        operator = Color3.fromRGB(204, 204, 204),   -- Light grey (operators)
-        identifier = Color3.fromRGB(0, 164, 223),   -- Blue (functions)
-        builtin = Color3.fromRGB(252, 152, 103),    -- Orange (built-ins)
-        property = Color3.fromRGB(122, 114, 185),   -- Purple (properties)
-        self = Color3.fromRGB(86, 156, 214),        -- Light blue (self)
-        default = Color3.fromRGB(204, 204, 204)     -- Default text color
-    }
-    
-    -- Keywords for highlighting
-    local keywords = {
-        ["and"] = true, ["break"] = true, ["do"] = true, ["else"] = true,
-        ["elseif"] = true, ["end"] = true, ["false"] = true, ["for"] = true,
-        ["function"] = true, ["if"] = true, ["in"] = true, ["local"] = true,
-        ["nil"] = true, ["not"] = true, ["or"] = true, ["repeat"] = true,
-        ["return"] = true, ["then"] = true, ["true"] = true, ["until"] = true,
-        ["while"] = true, ["continue"] = true
-    }
-    
-    -- Roblox builtins
-    local builtins = {
-        ["game"] = true, ["wait"] = true, ["workspace"] = true, ["script"] = true,
-        ["print"] = true, ["warn"] = true, ["error"] = true, ["pcall"] = true,
-        ["spawn"] = true, ["delay"] = true, ["tick"] = true, ["pairs"] = true,
-        ["ipairs"] = true, ["next"] = true, ["type"] = true, ["typeof"] = true,
-        ["tonumber"] = true, ["tostring"] = true, ["table"] = true, ["string"] = true,
-        ["math"] = true, ["coroutine"] = true, ["Enum"] = true, ["Instance"] = true,
-        ["Vector2"] = true, ["Vector3"] = true, ["CFrame"] = true, ["Color3"] = true,
-        ["UDim2"] = true, ["TweenInfo"] = true, ["Ray"] = true, ["Random"] = true,
-        ["debug"] = true
-    }
-    
     -- Add line numbers
     for i = 1, #lines do
         local lineLabel = Instance.new("TextLabel")
@@ -389,70 +352,99 @@ function UIModule.ShowCodeViewer(codeViewerFrame, script)
         end
     end
     
-    -- Add decompiler information header (like in the reference image)
-    local lineCount = #lines
-    
-    -- Add decompiler info headers
-    for i = 1, 5 do
-        local headerLine = Instance.new("TextLabel")
-        headerLine.Name = "Header" .. i
-        headerLine.Size = UDim2.new(1, -5, 0, 18)
-        headerLine.Position = UDim2.new(0, 0, 0, (i-1-5) * 18)  -- Position before line 1
-        headerLine.Text = tostring(i)
-        headerLine.TextColor3 = Color3.fromRGB(128, 128, 128)
-        headerLine.TextSize = 14
-        headerLine.Font = Enum.Font.Code
-        headerLine.TextXAlignment = Enum.TextXAlignment.Right
-        headerLine.BackgroundTransparency = 1
-        headerLine.Parent = lineContainer
+    -- Add line numbers
+    for i = 1, #lines do
+        local lineLabel = Instance.new("TextLabel")
+        lineLabel.Name = "Line" .. i
+        lineLabel.Size = UDim2.new(1, -5, 0, 18)
+        lineLabel.Position = UDim2.new(0, 0, 0, (i-1) * 18)
+        lineLabel.Text = tostring(i)
+        lineLabel.TextColor3 = Color3.fromRGB(128, 128, 128)
+        lineLabel.TextSize = 14
+        lineLabel.Font = Enum.Font.Code
+        lineLabel.TextXAlignment = Enum.TextXAlignment.Right
+        lineLabel.BackgroundTransparency = 1
+        lineLabel.Parent = lineContainer
         
-        local headerText = Instance.new("TextLabel")
-        headerText.Name = "HeaderText" .. i
-        headerText.Size = UDim2.new(1, -5, 0, 18)
-        headerText.Position = UDim2.new(0, 5, 0, (i-1-5) * 18)
+        -- Create code line (basic version for initial display)
+        local codeLabel = Instance.new("TextLabel")
+        codeLabel.Name = "Code" .. i
+        codeLabel.Size = UDim2.new(1, -5, 0, 18)
+        codeLabel.Position = UDim2.new(0, 5, 0, (i-1) * 18)
+        codeLabel.Text = lines[i]
+        codeLabel.TextColor3 = colors.default
+        codeLabel.TextSize = 14
+        codeLabel.Font = Enum.Font.Code
+        codeLabel.TextXAlignment = Enum.TextXAlignment.Left
+        codeLabel.BackgroundTransparency = 1
+        codeLabel.Parent = linesFrame
         
-        if i == 1 then
-            headerText.Text = "-- Decompiler will be improved VERY SOON!"
-        elseif i == 2 then
-            headerText.Text = "-- Decompiled with Konstant V2.1, a fast Luau decompiler"
-        elseif i == 3 then
-            headerText.Text = "-- Decompiled on " .. os.date("%Y-%m-%d %H:%M:%S") 
-        elseif i == 4 then
-            headerText.Text = "-- Luau version 6, Types version 3"
-        elseif i == 5 then
-            headerText.Text = "-- Time taken: 0.000513 seconds"
+        -- Apply basic syntax highlighting
+        -- Comments
+        if string.match(lines[i], "^%s*%-%-") then
+            codeLabel.TextColor3 = colors.comment
+        else
+            -- Try to match patterns for syntax highlighting
+            -- Handling strings
+            if string.find(lines[i], "[\"']") then
+                -- Advanced parsing would require complex pattern matching or token parsing
+                if string.find(lines[i], "^%s*%-%-") == nil and 
+                   (string.find(lines[i], "\".-\"") or string.find(lines[i], "'.-'")) then
+                    if string.find(lines[i], "function") then
+                        -- Function with string - don't color entire line
+                    elseif string.find(lines[i], "if") or string.find(lines[i], "then") then
+                        -- Condition with string - don't color entire line
+                    else
+                        codeLabel.TextColor3 = colors.string
+                    end
+                end
+            end
+            
+            -- Handling keywords
+            for word in string.gmatch(lines[i], "[%a_][%w_]*") do
+                if keywords[word] then
+                    if string.find(lines[i], "^%s*" .. word .. "[^%w_]") or
+                       string.find(lines[i], "[^%w_]" .. word .. "[^%w_]") then
+                        codeLabel.TextColor3 = colors.keyword
+                    end
+                elseif builtins[word] then
+                    if not string.find(lines[i], "^%s*%-%-") then  -- Not in a comment
+                        codeLabel.TextColor3 = colors.builtin
+                    end
+                end
+                
+                -- Specific handling for 'Parent'
+                if string.find(lines[i], "[%w_]+%.Parent") and not string.find(lines[i], "^%s*%-%-") then
+                    codeLabel.TextColor3 = colors.property
+                end
+                
+                -- Handle function calls
+                if string.find(lines[i], word .. "%s*%(") and not keywords[word] and not string.find(lines[i], "^%s*function") then
+                    if not string.find(lines[i], "^%s*%-%-") then  -- Not in a comment
+                        codeLabel.TextColor3 = colors.identifier
+                    end
+                end
+            end
+            
+            -- Handle function definitions
+            if string.find(lines[i], "function%s+[%w_:%.]+%s*%(") then
+                codeLabel.TextColor3 = colors.keyword
+            end
+            
+            -- Handle numbers
+            if string.find(lines[i], "%s%d+[%s%)]") and not string.find(lines[i], "^%s*%-%-") then
+                -- Has a number that's not in a comment
+                -- We can't perfectly color just the number in a TextLabel
+            end
+            
+            -- Handle if statements with 'Kick' specifically (highlight key word)
+            if string.find(lines[i], "Kick") and not string.find(lines[i], "^%s*%-%-") then
+                if not string.find(lines[i], "\".-Kick.-\"") and not string.find(lines[i], "'.-Kick.-'") then
+                    codeLabel.TextColor3 = Color3.fromRGB(255, 85, 85)  -- Bright red for emphasis
+                end
+            end
         end
-        
-        headerText.TextColor3 = colors.comment
-        headerText.TextSize = 14
-        headerText.Font = Enum.Font.Code
-        headerText.TextXAlignment = Enum.TextXAlignment.Left
-        headerText.BackgroundTransparency = 1
-        headerText.Parent = linesFrame
-    end
-    
-    -- Update canvas size to fit all content
-    codeScroll.CanvasSize = UDim2.new(0, 0, 0, (lineCount + 5) * 18 + 10)
-    
-    -- Set up button functionality
-    local copyButton = codeViewerFrame.Parent.ToolBar.CopyButton
-    local saveButton = codeViewerFrame.Parent.ToolBar.SaveButton
-    
-    -- Function to copy code to clipboard
-    copyButton.MouseButton1Click:Connect(function()
-        setclipboard(source)
-    end)
-    
-    -- Function to simulate "save to file"
-    saveButton.MouseButton1Click:Connect(function()
-        -- This would typically use writefile() in a real executor
-        -- For safety in this example, just provide feedback
-        game:GetService("StarterGui"):SetCore("SendNotification", {
-            Title = "Script Viewer",
-            Text = "Script saved to file",
-            Duration = 3
-        })
-    end)
+    }
 end-- UIModule.lua
 
 local UIModule = {}
@@ -649,12 +641,17 @@ function UIModule.CreateUI()
     initialMessage.TextWrapped = false
     initialMessage.Parent = Lines
     
-    return {
+    -- Explicitly return all functions to ensure they're available
+return {
         MainFrame = MainFrame,
         ResultsFrame = ResultsFrame,
         CodeViewerFrame = CodeViewerFrame,
         ScanButton = ScanButton,
-        CloseButton = CloseButton
+        CloseButton = CloseButton,
+        CreateUI = UIModule.CreateUI,
+        ClearResults = UIModule.ClearResults,
+        DisplayResults = UIModule.DisplayResults,
+        ShowCodeViewer = UIModule.ShowCodeViewer
     }
 end
 
