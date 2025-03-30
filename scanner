@@ -1,11 +1,38 @@
-local Scanner = {}
+-- ScannerModule.lua
 
-function Scanner:Scan(callback)
-    for _, obj in ipairs(game:GetDescendants()) do
-        if obj:IsA("LocalScript") and obj.Source:find("Kick") then
-            callback(obj:GetFullName())
+local ScannerModule = {}
+
+function ScannerModule.ScanForKick()
+    local results = {}
+    
+    local function processInstance(instance, path)
+        if instance:IsA("LocalScript") then
+            local success, source = pcall(function()
+                return decompile(instance)
+            end)
+            
+            if success and source and string.find(source, "Kick") then
+                table.insert(results, {
+                    Name = instance.Name,
+                    Path = path,
+                    Source = source,
+                    Instance = instance
+                })
+            end
+        end
+        
+        for _, child in pairs(instance:GetChildren()) do
+            local newPath = path .. "/" .. child.Name
+            processInstance(child, newPath)
         end
     end
+    
+    for _, service in pairs({"ReplicatedStorage", "ReplicatedFirst", "StarterGui", "StarterPack", "StarterPlayer"}) do
+        local serviceInstance = game:GetService(service)
+        processInstance(serviceInstance, service)
+    end
+    
+    return results
 end
 
-return Scanner
+return ScannerModule
