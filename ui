@@ -394,7 +394,8 @@ function UIModule.AddResult(path, name, source, instance)
     
     ViewButton.MouseButton1Click:Connect(function()
         -- If we don't have source yet, try to get it
-        if not source then
+        local scriptSource = source
+        if not scriptSource then
             local success, result = pcall(function()
                 if typeof(decompile) == "function" and instance then
                     return decompile(instance)
@@ -408,15 +409,14 @@ function UIModule.AddResult(path, name, source, instance)
             end)
             
             if success and result then
-                source = result
-                ResultItem.Source = source
+                scriptSource = result
             else
-                source = "Error retrieving source code."
+                scriptSource = "Error retrieving source code."
             end
         end
         
         -- Create code viewer window
-        UIModule.CreateCodeViewer(name, path, source)
+        UIModule.CreateCodeViewer(name, path, scriptSource)
     end)
     
     ResultItem.Parent = UIModule.ResultsFrame
